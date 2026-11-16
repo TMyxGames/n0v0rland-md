@@ -30,7 +30,13 @@ Playground 顶部可以切换文章/评论 profile 和明暗主题。两种 prof
 import { createMarkdownItPreset } from '@n0v0rland-md/preset'
 import { createMarkdownItAdapter } from '@n0v0rland-md/markdown-it-adapter'
 
-const markdown = createMarkdownItPreset({ siteOrigin: 'https://example.com' })
+const markdown = createMarkdownItPreset({
+  siteOrigin: 'https://example.com',
+  configure: (markdown) => {
+    markdown.use(myBlockPlugin)
+    markdown.inline.ruler.before('text', 'myInlinePlugin', myInlinePlugin)
+  },
+})
 const adapter = createMarkdownItAdapter({
   markdown,
   profile: 'article',

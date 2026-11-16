@@ -13,7 +13,12 @@ import markdownItFootnote from 'markdown-it-footnote';
 import container from 'markdown-it-container'; // 自定义容器
 
 
-export function createSiteMarkdown(options: { siteOrigin?: string } = {}) {
+export interface MarkdownPresetOptions {
+    siteOrigin?: string;
+    configure?: (markdown: MarkdownIt, commentMarkdown: MarkdownIt) => void;
+}
+
+export function createSiteMarkdown(options: MarkdownPresetOptions = {}) {
 const md = new MarkdownIt({
     // 用户文章正文会通过 v-html 挂载；禁止 Markdown 原始 HTML，避免
     // <script>、事件属性、iframe 等内容形成存储型 XSS。
@@ -566,10 +571,11 @@ const renderCommentMarkdown = value => {
     });
 };
 
+options.configure?.(md, commentMd);
 return { md, commentMd, renderCommentMarkdown };
 }
 
-export function createMarkdownItPreset(options: { siteOrigin?: string } = {}) {
+export function createMarkdownItPreset(options: MarkdownPresetOptions = {}) {
     return createSiteMarkdown(options).md;
 }
 
