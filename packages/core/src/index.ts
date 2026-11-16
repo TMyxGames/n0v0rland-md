@@ -1,6 +1,6 @@
-export * from './MarkdownSourceDocument'
-export * from './markdown-dom-selection'
-export * from './markdown-input'
+export * from './MarkdownSourceDocument.js'
+export * from './markdown-dom-selection.js'
+export * from './markdown-input.js'
 
 export interface MarkdownEditorCoreOptions {
   profile: 'article' | 'comment'
