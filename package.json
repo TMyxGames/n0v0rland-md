@@ -4,6 +4,7 @@
   "scripts": {
     "build": "pnpm -r build",
     "type-check": "pnpm -r build",
+    "verify": "pnpm run build && node scripts/verify-editor.mjs",
     "dev": "vite --config examples/vue-vite/vite.config.ts --host"
   },
   "devDependencies": {

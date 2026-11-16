@@ -70,7 +70,7 @@ let mutationObserver: MutationObserver | undefined
 let lastSelection: SelectionState = { from: source.length, to: source.length, backward: false }
 let verticalColumn: number | undefined
 let syntaxRevealTimer: number | undefined
-let sourceDocumentCache: { source: string; profile: Profile; document: MarkdownSourceDocument } | undefined
+let sourceDocumentCache: { source: string; profile: Profile; adapter: MarkdownEditorAdapter; document: MarkdownSourceDocument } | undefined
 
 const inlinePattern = /(?<!\\)(!\[[^\]\n]*\]\([^) \n]+(?:\s+"[^"]*")?\)|\[[^\]\n]+\]\([^) \n]+\)|\[[^\]\n]+\]\[[^\]\n]+\]|\[\^[^\]\n]+\]|\*\*[^*\n]+\*\*|__[^_\n]+__|(?<!\*)\*[^*\n]+\*(?!\*)|(?<!_)_[^_\n]+_(?!_)|\+\+[^+\n]+\+\+|~~[^~\n]+~~|==[^=\n]+==|`[^`\n]+`|\|\|[^|\n]+\|\||::(?:whisper|loud|inner|不解析|no[ -]?parse|raw)\[[^\]\n]+\]|:[a-z][a-z0-9_+-]*:)/gi
 
@@ -375,9 +375,9 @@ function rawBlockElement(raw: string, from: number, reason = '复杂结构') {
 
 function sourceDocumentFor(value: string) {
   const profile = props.profile
-  if (sourceDocumentCache?.source === value && sourceDocumentCache.profile === profile) return sourceDocumentCache.document
+  if (sourceDocumentCache?.source === value && sourceDocumentCache.profile === profile && sourceDocumentCache.adapter === props.adapter) return sourceDocumentCache.document
   const document = new MarkdownSourceDocument(value, props.adapter.parser as any)
-  sourceDocumentCache = { source: value, profile, document }
+  sourceDocumentCache = { source: value, profile, adapter: props.adapter, document }
   return document
 }
 
