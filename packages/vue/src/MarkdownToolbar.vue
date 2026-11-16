@@ -44,6 +44,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { MarkdownEditorMode, MarkdownUploadImages } from './types'
+import { toolLabels } from './toolbar-config'
 
 const props = defineProps<{
   mode: MarkdownEditorMode
@@ -80,21 +81,5 @@ const modes = [
   { value: 'preview' as const, label: '预览' },
 ]
 
-const labels: Record<string, string> = {
-  heading: '标题',
-  blockquote: '引用',
-  alert: '提示块',
-  table: '表格',
-  codeBlock: '代码块',
-  mermaid: '图表',
-  bold: '粗体',
-  italic: '斜体',
-  underline: '下划线',
-  strike: '删除线',
-  code: '代码',
-  spoiler: '隐藏',
-  whisper: '小声',
-  loud: '大声',
-  inner: '内心',
-}
+const labels = toolLabels
 </script>

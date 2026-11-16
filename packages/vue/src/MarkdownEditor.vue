@@ -31,6 +31,7 @@
 import { computed, ref, watch } from 'vue'
 import MarkdownInput from './MarkdownInput.vue'
 import MarkdownToolbar from './MarkdownToolbar.vue'
+import { defaultToolbars, syntaxPairs } from './toolbar-config'
 import type { MarkdownEditorExpose, MarkdownEditorMode, MarkdownEditorProfile, MarkdownEditorAdapter, MarkdownHighlightCode, MarkdownLinkHandler, MarkdownRenderMermaid, MarkdownUploadImages } from './types'
 
 const props = withDefaults(defineProps<{
@@ -59,9 +60,7 @@ const emit = defineEmits<{
 const current = ref(props.modelValue)
 const mode = ref<MarkdownEditorMode>('visual')
 const input = ref<InstanceType<typeof MarkdownInput> | null>(null)
-const defaultArticleToolbar = ['heading', 'blockquote', 'alert', 'table', 'codeBlock', 'mermaid']
-const defaultCommentToolbar = ['bold', 'italic', 'underline', 'strike', 'code', 'spoiler', 'whisper']
-const visibleToolbar = computed(() => props.toolbar || (props.profile === 'comment' ? defaultCommentToolbar : defaultArticleToolbar))
+const visibleToolbar = computed(() => props.toolbar || defaultToolbars[props.profile])
 
 watch(() => props.modelValue, value => {
   if (value !== current.value) current.value = value
@@ -76,24 +75,7 @@ function setMode(value: MarkdownEditorMode) {
 }
 
 function insertSyntax(kind: string) {
-  const syntax: Record<string, [string, string]> = {
-    bold: ['**', '**'],
-    italic: ['*', '*'],
-    underline: ['++', '++'],
-    strike: ['~~', '~~'],
-    code: ['`', '`'],
-    spoiler: ['||', '||'],
-    whisper: ['::whisper[', ']'],
-    loud: ['::loud[', ']'],
-    inner: ['::inner[', ']'],
-    heading: ['# ', ''],
-    blockquote: ['> ', ''],
-    alert: ['> [!note]\n> ', ''],
-    table: ['| 列 1 | 列 2 |\\n| --- | --- |\\n| ', ' |  |'],
-    codeBlock: ['```\\n', '\\n```'],
-    mermaid: ['```mermaid\\n', '\\n```'],
-  }
-  const [before, after] = syntax[kind] || [kind, '']
+  const [before, after] = syntaxPairs[kind] || [kind, '']
   input.value?.insertSyntax(before, after)
 }
 
