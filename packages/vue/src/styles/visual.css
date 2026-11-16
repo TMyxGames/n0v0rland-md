@@ -1,0 +1,125 @@
+
+.markdown-visual-editor .bd-dropcap { display: flow-root; }
+.markdown-visual-editor .bd-dropcap > .markdown-syntax-boundary { display: block; height: 0; overflow: hidden; }
+.markdown-visual-editor .bd-dropcap > .markdown-syntax-boundary.is-visible { width: auto; height: auto; }
+.markdown-visual-editor .markdown-alert-title { pointer-events: none; }
+.markdown-visual-editor .markdown-editor-line-ending { white-space: normal; }
+.bd-markdown-theme.markdown-visual-editor blockquote:hover { transform: none; }
+.bd-markdown-theme.markdown-visual-editor .markdown-editor-alert-header:not(:has(.is-visible)) {
+  height: 0; min-height: 0; margin: 0; overflow: hidden;
+}
+.markdown-visual-editor .markdown-editor-table-syntax > td {
+  padding: 0; border: 0; background: transparent; line-height: 0;
+}
+.markdown-visual-editor .markdown-editor-table-syntax .is-visible { line-height: 1.6; }
+.markdown-visual-editor .markdown-editor-table-syntax .markdown-syntax-boundary:not(.is-visible) { height: 0; }
+.markdown-visual-editor .bd-markdown-theme-table-wrapper { max-width: 100%; overflow-x: auto; }
+.markdown-visual-editor .bd-markdown-theme-table-wrapper table { min-width: min(24rem, 100%); }
+.markdown-visual-editor .markdown-editor-table-tail { white-space: normal; }
+.markdown-visual-editor .markdown-editor-rule {
+  display: flex;
+  align-items: center;
+  min-height: 1.5em;
+  white-space: nowrap;
+}
+.markdown-visual-editor .markdown-editor-rule hr {
+  flex: 1 1 auto;
+  min-width: 0;
+  pointer-events: none;
+  user-select: none;
+}
+.markdown-visual-editor h1 > .markdown-editor-heading-content {
+  caret-color: var(--color-text);
+}
+.markdown-visual-editor .markdown-editor-code { counter-reset: editor-code-line; }
+.markdown-visual-editor .markdown-editor-code .bd-code-line { min-height: 1.5em; white-space: pre; }
+.markdown-visual-editor .markdown-editor-code .bd-code-line:has(.markdown-syntax-boundary) { grid-template-columns: minmax(0, 1fr); }
+.markdown-visual-editor .markdown-editor-code .bd-code-line:not(:has(.markdown-syntax-boundary)) { counter-increment: editor-code-line; }
+.markdown-visual-editor .markdown-editor-code .bd-code-line:not(:has(.markdown-syntax-boundary))::before {
+  content: counter(editor-code-line); display: inline-block; min-width: 2.5rem;
+  padding-right: .75rem; text-align: right; color: var(--color-text-muted); user-select: none;
+}
+.markdown-visual-editor .markdown-editor-code .bd-code-line:has(.markdown-syntax-boundary):not(:has(.is-visible)) { height: 0; min-height: 0; overflow: hidden; }
+.markdown-visual-editor li > .markdown-syntax-boundary { font-weight: normal; }
+.markdown-visual-editor{min-height:18rem;outline:none;overflow-wrap:anywhere;white-space:pre-wrap;caret-color:var(--color-accent)}.markdown-visual-editor.is-comment{min-height:8rem}.markdown-visual-editor:empty:before,.markdown-visual-editor.is-empty:before{content:attr(data-placeholder);color:var(--color-text-muted);pointer-events:none}.markdown-editor-block{margin:0 0 1rem}.markdown-visual-editor h1,.markdown-visual-editor h2,.markdown-visual-editor h3,.markdown-visual-editor h4,.markdown-visual-editor h5,.markdown-visual-editor h6{outline:none}.markdown-visual-editor h1{text-align:center}.markdown-editor-code,.markdown-raw-block{white-space:pre-wrap;overflow:auto}.markdown-syntax-boundary{display:inline-block;width:0;height:1em;line-height:0;overflow:visible;color:transparent;white-space:pre;user-select:text;vertical-align:baseline;position:relative;top:-.04em;caret-color:var(--color-accent);pointer-events:none}.markdown-syntax-boundary.is-visible{width:auto;height:auto;overflow:visible;color:var(--color-markdown-syntax);pointer-events:auto;line-height:0}.markdown-visual-editor .bd-markdown-whisper{font-size:var(--md-font-whisper);color:var(--color-text-secondary)}.markdown-visual-editor .bd-markdown-loud{font-size:calc(var(--md-font-body) + .25rem)}.markdown-visual-editor .bd-markdown-inner-thought{display:inline-block}.markdown-visual-editor .markdown-alert{margin:0 0 1rem}.markdown-visual-editor .markdown-alert-title::after{content:attr(data-label);margin-left:.35rem}.markdown-visual-editor [data-source-from]:focus{outline:none}.markdown-visual-editor .markdown-editor-link{color:var(--color-accent);text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--color-accent) 45%,transparent)}.markdown-visual-editor .markdown-editor-image{display:inline-flex;align-items:center;gap:.25rem;max-width:100%;vertical-align:middle}.markdown-visual-editor .markdown-editor-image img{max-width:min(20rem,100%);max-height:14rem;object-fit:contain;pointer-events:none}.markdown-visual-editor .markdown-editor-image .markdown-syntax-boundary{align-self:center}.markdown-visual-editor .markdown-editor-code .markdown-syntax-boundary{top:0}.markdown-visual-editor .task-list-item{position:relative;padding-left:2rem}.markdown-visual-editor .task-list-item input[type=checkbox]{position:absolute;left:0;top:.3em;margin:0}.markdown-visual-editor h1 > .markdown-editor-heading-content{line-height:inherit;caret-color:var(--color-accent)}@media(max-width:768px){.site-editor-panel{padding:.75rem}.markdown-visual-editor{min-height:10rem}}
+.markdown-visual-editor .markdown-editor-link-source{display:inline-block;width:0;max-width:0;overflow:hidden;opacity:0;pointer-events:none;white-space:nowrap}.markdown-visual-editor .markdown-editor-link::before{content:attr(data-label);display:inline}.markdown-visual-editor .markdown-editor-link:focus-within::before{display:none}
+.markdown-visual-editor blockquote.markdown-editor-nested-quote{margin:.35rem 0;padding:.35rem .75rem;border-width:1px;background:color-mix(in srgb,var(--color-accent) 5%,transparent);box-shadow:none}
+.markdown-visual-editor .markdown-editor-image-source{display:inline-block;width:0;max-width:0;overflow:hidden;opacity:0;pointer-events:none;white-space:nowrap}
+.markdown-visual-editor .markdown-editor-footnote-source{display:inline-block;width:0;max-width:0;overflow:hidden;opacity:0;pointer-events:none;white-space:nowrap}.markdown-visual-editor .markdown-editor-footnote-ref::after{content:attr(data-label);color:var(--color-accent);font-size:.72em;vertical-align:super}.markdown-visual-editor .markdown-editor-footnote-ref:focus-within::after{display:none}
+.markdown-visual-editor .markdown-editor-mermaid-preview{display:flex;justify-content:center;align-items:center;margin:.5rem 0 1rem;padding:.75rem;border:1px solid var(--color-surface-border);border-radius:var(--radius-sm);background:color-mix(in srgb,var(--color-surface) 88%,var(--color-accent) 12%);pointer-events:none}
+.markdown-visual-editor .markdown-editor-mermaid-preview img{display:block;max-width:100%;height:auto}
+.markdown-visual-editor:focus-within .markdown-editor-mermaid-preview{display:none}
+.markdown-visual-editor .markdown-editor-mermaid-preview.is-error{display:block;color:var(--color-danger);font-size:var(--ui-sm)}
+.markdown-visual-editor h1 > .markdown-editor-heading-content:hover {
+  transform: none;
+}
+.markdown-visual-editor blockquote:hover,
+.markdown-visual-editor :is(h2, h3, h4, h5, h6) > span:hover {
+  transform: none;
+}
+.markdown-visual-editor :is(s, del):hover,
+.markdown-visual-editor .bd-markdown-inner-thought {
+  animation: none;
+  will-change: auto;
+}
+.markdown-visual-editor h1 > .markdown-editor-heading-content {
+  background: none;
+  color: var(--color-accent);
+  -webkit-text-fill-color: initial;
+}
+@supports ((background-clip: text) or (-webkit-background-clip: text)) {
+  .markdown-visual-editor h1 .markdown-editor-text {
+    background-image: var(--color-accent-gradient);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
+}
+@media (forced-colors: active) {
+  .markdown-visual-editor h1 .markdown-editor-text {
+    background: none;
+    color: CanvasText;
+    -webkit-text-fill-color: CanvasText;
+  }
+}
+.markdown-visual-editor {
+  position: relative;
+}
+.markdown-visual-editor.is-empty::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.markdown-visual-editor .markdown-syntax-boundary {
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  text-shadow: none;
+  transition: none;
+}
+.markdown-visual-editor .markdown-syntax-boundary:not(.is-visible) {
+  opacity: 0;
+}
+.markdown-editor-source-gap {
+  white-space: normal;
+}
+.markdown-visual-editor .markdown-editor-empty-line {
+  margin: 0;
+  min-height: 2em;
+  white-space: pre-wrap;
+}
+.markdown-visual-editor .markdown-editor-empty-line > span {
+  white-space: normal;
+}
+.markdown-visual-editor .markdown-raw-block::before {
+  content: "源码保留 · " attr(data-fallback-reason);
+  display: block;
+  margin-bottom: .5rem;
+  color: var(--color-code-text);
+  font-family: inherit;
+  font-size: var(--ui-xs);
+  opacity: .75;
+  user-select: none;
+  pointer-events: none;
+}
+

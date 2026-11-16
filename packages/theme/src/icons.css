@@ -1,0 +1,12 @@
+.mde-theme {
+  --icon-akar-icons-link-out-svg: url('./icons/akar-icons--link-out.svg');
+  --icon-blockquote-svg: url('./icons/material-symbols--format-quote-rounded.svg');
+  --icon-fa7-solid-circle-info-svg: url('./icons/fa7-solid--circle-info.svg');
+  --icon-fa7-solid-exclamation-triangle-svg: url('./icons/fa7-solid--exclamation-triangle.svg');
+  --icon-fa7-solid-lightbulb-svg: url('./icons/fa7-solid--lightbulb.svg');
+  --icon-fa7-solid-star-svg: url('./icons/fa7-solid--star.svg');
+  --icon-fa7-solid-xmark-circle-svg: url('./icons/fa7-solid--xmark-circle.svg');
+  --icon-material-symbols-article-outline-rounded-svg: url('./icons/material-symbols--article-outline-rounded.svg');
+  --icon-material-symbols-format-quote-rounded-svg: url('./icons/material-symbols--format-quote-rounded.svg');
+  --icon-material-symbols-numbers-rounded-svg: url('./icons/material-symbols--numbers-rounded.svg');
+}

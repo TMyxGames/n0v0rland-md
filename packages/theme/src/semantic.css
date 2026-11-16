@@ -1,0 +1,1423 @@
+.bd-markdown-theme {
+    --md-font-body: 1.125rem;
+    --md-font-h1: 2.125rem;
+    --md-font-h2: 1.875rem;
+    --md-font-h3: 1.625rem;
+    --md-font-h4: 1.5rem;
+    --md-font-h5: 1.25rem;
+    --md-font-h6: 1.125rem;
+    --md-font-small: 1rem;
+    --md-font-xs: 0.875rem;
+    --md-font-whisper: 0.625rem;
+    --md-font-dropcap: 3.75rem;
+    font-size: var(--md-font-body);
+    line-height: 2;
+    letter-spacing: 0.25px;
+    font-family: var(--mde-font-family, system-ui, sans-serif);
+    color: var(--color-text);
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+}
+
+/* 文章内容必须服从详情卡片的可用宽度，避免长文本或媒体把 flex 列撑出视口。 */
+.bd-markdown-theme > * {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.bd-markdown-theme img,
+.bd-markdown-theme video,
+.bd-markdown-theme iframe {
+    max-width: 100%;
+}
+
+.bd-markdown-theme pre,
+.bd-markdown-theme .bd-code-block,
+.bd-markdown-theme .bd-markdown-theme-table-wrapper,
+.bd-markdown-theme .bd-mermaid {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-wrap: normal;
+}
+
+/* 一级标题 */
+.bd-markdown-theme h1 {
+    font-size: var(--md-font-h1);
+    position: relative;
+    text-align: center;
+
+    margin: 2rem auto;
+    display: flex;
+    justify-content: center;
+
+    color: var(--color-accent);
+}
+
+.bd-markdown-theme h1 > span { 
+    display: block;
+    min-width: 0;
+    position: relative;
+    transition: transform 0.25s ease;
+}
+
+/* 渐变跟随实际文字层移动，避免 Chromium/Edge 在子层 transform 后
+   无法使用父层的 text clip。拆字入场动画中的字符也需要自己的填充。 */
+@supports ((background-clip: text) or (-webkit-background-clip: text)) {
+    .bd-markdown-theme h1 > span,
+    .bd-markdown-theme h1 > span .rise-text-reveal__char {
+        background-image: var(--color-accent-gradient);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        -webkit-text-fill-color: transparent;
+    }
+}
+
+@media (forced-colors: active) {
+    .bd-markdown-theme h1 > span,
+    .bd-markdown-theme h1 > span .rise-text-reveal__char {
+        background-image: none;
+        color: CanvasText;
+        -webkit-text-fill-color: CanvasText;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bd-markdown-theme h1 > span {
+        transition: none;
+    }
+}
+
+.bd-markdown-theme h1 > span::after { 
+    content: '';
+    position: absolute;
+
+    bottom: -.25rem;
+    left: 50%;
+    height: .25rem;
+    width: 3rem;
+    transform: translateX(-50%);
+
+    border-radius: 1rem;
+    /* background: radial-gradient(#f2acd5, #f9d6e8 75%); */
+    background: linear-gradient( 
+        to right,
+        var(--color-accent-soft) 0%, 
+        var(--color-accent-strong) 50%, 
+        var(--color-accent-soft) 100%
+    );
+    transition: all 0.25s ease;
+}
+
+.bd-markdown-theme h1 > span:hover {
+    transform: translateY(-0.25rem);
+}
+
+.bd-markdown-theme h1 > span:hover::after {
+    width: 100%;
+}
+
+/* 二级标题 */
+.bd-markdown-theme h2 {
+    font-size: var(--md-font-h2);
+    position: relative;
+    font-weight: 500;
+
+    display: flex;
+    left: 1rem;
+
+    color: var(--color-accent);
+    /* color: transparent;
+    background: var(--color-accent-gradient);
+    background-clip: text; */
+}
+
+.bd-markdown-theme h2 > span { 
+    position: relative;
+    transition: all 0.25s ease;
+}
+
+.bd-markdown-theme h2::after {
+    content: '';
+    position: absolute;
+    
+    left: -1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0.4rem;
+    height: 60%;
+
+    background: var(--color-accent-gradient);
+    border-radius: 1rem;
+}
+
+.bd-markdown-theme h2 > span:hover {
+    transform: translateX(0.5rem);
+}
+
+/* 三级标题 */
+.bd-markdown-theme h3 {
+    font-size: var(--md-font-h3);
+    position: relative;
+    font-weight: 500;
+
+    display: flex;
+    left: 1rem;
+
+    color: var(--color-accent);
+    /* color: transparent;
+    background: var(--color-accent-gradient);
+    background-clip: text; */
+}
+
+.bd-markdown-theme h3 > span { 
+    position: relative;
+    transition: all 0.25s ease;
+}
+
+.bd-markdown-theme h3::after {
+    content: '';
+    position: absolute;
+    
+    left: -1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0.4rem;
+    height: 60%;
+
+    background: var(--color-accent-gradient);
+    border-radius: 1rem;
+}
+
+.bd-markdown-theme h3 > span:hover {
+    transform: translateX(0.5rem);
+}
+
+/* 四级标题 */
+.bd-markdown-theme h4 {
+    font-size: var(--md-font-h4);
+    position: relative;
+    font-weight: 500;
+
+    display: flex;
+    left: 1rem;
+    margin: 2rem 0;
+
+    color: var(--color-accent);
+    /* color: transparent;
+    background: var(--color-accent-gradient);
+    background-clip: text; */
+}
+
+.bd-markdown-theme h4 > span { 
+    position: relative;
+    transition: all 0.25s ease;
+}
+
+.bd-markdown-theme h4::after {
+    content: '';
+    position: absolute;
+    
+    left: -1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0.35rem;
+    height: 60%;
+
+    background: var(--color-accent-gradient);
+    border-radius: 1rem;
+}
+
+.bd-markdown-theme h4 > span:hover {
+    transform: translateX(0.5rem);
+}
+
+/* 五级标题 */
+.bd-markdown-theme h5 {
+    font-size: var(--md-font-h5);
+    position: relative;
+    font-weight: 500;
+
+    display: flex;
+    left: 1rem;
+    margin: 2rem 0;
+
+    color: var(--color-accent);
+    /* color: transparent;
+    background: var(--color-accent-gradient);
+    background-clip: text; */
+}
+
+.bd-markdown-theme h5 > span { 
+    position: relative;
+    transition: all 0.25s ease;
+}
+
+.bd-markdown-theme h5::after {
+    content: '';
+    position: absolute;
+    
+    left: -1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0.3rem;
+    height: 60%;
+
+    background: var(--color-accent-gradient);
+    border-radius: 1rem;
+}
+
+.bd-markdown-theme h5 > span:hover {
+    transform: translateX(0.5rem);
+}
+
+/* 六级标题 */
+.bd-markdown-theme h6 {
+    font-size: var(--md-font-h6);
+    position: relative;
+    font-weight: 500;
+
+    display: flex;
+    left: 1rem;
+    margin: 2rem 0;
+
+    color: var(--color-accent);
+    /* color: transparent;
+    background: var(--color-accent-gradient);
+    background-clip: text; */
+}
+
+.bd-markdown-theme h6 > span { 
+    position: relative;
+    transition: all 0.25s ease;
+}
+
+.bd-markdown-theme h6::after {
+    content: '';
+    position: absolute;
+    
+    left: -1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0.3rem;
+    height: 60%;
+
+    background: var(--color-accent-gradient);
+    border-radius: 1rem;
+}
+
+.bd-markdown-theme h6 > span:hover {
+    transform: translateX(0.5rem);
+}
+
+/* 段落 */
+.bd-markdown-theme p {
+    font-size: var(--md-font-body);
+}
+
+.bd-markdown-theme .bd-anchor-target {
+    scroll-margin-top: 6rem;
+}
+
+.bd-markdown-theme .bd-anchor-link {
+    appearance: none;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+    position: absolute;
+    z-index: 1;
+    top: 50%;
+    left: -2.35rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    padding: 0;
+    background-color: var(--color-accent);
+    -webkit-mask: var(--icon-material-symbols-numbers-rounded-svg) center / contain no-repeat;
+    mask: var(--icon-material-symbols-numbers-rounded-svg) center / contain no-repeat;
+    opacity: 0;
+    transform: translate(0.35rem, -50%) scale(0.85);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.bd-markdown-theme .bd-anchor-link::after {
+    display: none;
+}
+
+.bd-markdown-theme .bd-anchor-target:hover > .bd-anchor-link,
+.bd-markdown-theme .bd-anchor-link:focus-visible {
+    opacity: 1;
+    transform: translate(0, -50%) scale(1);
+}
+
+.bd-markdown-theme .bd-anchor-link:focus-visible {
+    outline: 0.15rem solid var(--color-accent);
+    outline-offset: 0.2rem;
+}
+
+.bd-markdown-theme h1 > .bd-anchor-link {
+    left: -1.45rem;
+}
+
+@media (max-width: 768px) {
+    .bd-markdown-theme .bd-anchor-link {
+        left: -2rem;
+    }
+    .bd-markdown-theme h1 > .bd-anchor-link {
+        left: -1.5rem;
+    }
+}
+
+/* 首字下沉段落（自定义样式） */
+.bd-markdown-theme .bd-dropcap {
+    overflow: hidden;
+    margin: 1rem 0;
+}
+
+.bd-markdown-theme .bd-dropcap > p {
+    margin: 0rem; 
+    
+}
+
+.bd-markdown-theme .bd-dropcap > p:first-of-type::first-letter { 
+    font-size: var(--md-font-dropcap);
+    
+    padding: .625rem .625rem .125rem .125rem;
+
+    float: left;
+    line-height: 1;
+    clear: both;
+
+    text-shadow: .125rem .125rem .125rem var(--color-accent);
+
+    @media (max-width: 768px) {
+        /* padding: .5rem .625rem .125rem .125rem; */
+    }
+}
+
+/* 不解析：保留包裹区域内的 Markdown 原文 */
+.bd-markdown-theme .bd-markdown-no-parse {
+    margin: 1rem 0;
+    max-width: 100%;
+}
+
+.bd-markdown-theme .bd-markdown-no-parse pre {
+    margin: 0;
+    padding: .85rem 1rem;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    border: 1px solid var(--color-surface-border);
+    border-radius: .75rem;
+    background: color-mix(in srgb, var(--color-code-bg) 72%, transparent);
+}
+
+.bd-markdown-theme .bd-markdown-no-parse code {
+    font-family: inherit;
+    color: var(--color-text);
+}
+
+/* 强调 */
+.bd-markdown-theme strong {
+    font-weight: 500;
+    color: var(--color-accent);
+    /* color: transparent;
+    background: var(--color-accent-gradient);
+    background-clip: text; */
+    text-shadow: 0.05rem 0.05rem 0.05rem var(--color-text);
+}
+
+/* 斜体 */
+.bd-markdown-theme em { 
+    font-style: italic;
+}
+
+/* 下划线 */
+.bd-markdown-theme u { 
+    text-decoration: none;
+    position: relative;
+    display: inline;
+    isolation: isolate;
+
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+
+    background-image:
+        radial-gradient(circle at 100% 50%, var(--color-accent) 0.25rem, transparent 0.27rem),
+        radial-gradient(circle at 0% 50%, var(--color-accent) 0.25rem, transparent 0.27rem),
+        linear-gradient(var(--color-accent), var(--color-accent));
+    background-repeat: no-repeat;
+
+    background-size: 
+        0.27rem 0.55rem,
+        0.27rem 0.55rem,
+        calc(100% - 0.54rem) 0.55rem;
+
+    background-position:
+        left bottom 0.1rem,
+        right bottom 0.1rem,
+        center bottom 0.1rem;
+
+}
+
+/* .bd-markdown-theme u::before { 
+    box-sizing: border-box;
+    content: '';
+    position: absolute;
+    
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 2.5px;
+    width: 100%;
+    height: 0.55rem;
+    z-index: -1;
+
+    border-radius: 1rem;
+    background-color: var(--color-accent);
+    box-decoration-break: clone;
+} */
+
+/* 删除线 */
+.bd-markdown-theme s { 
+    text-decoration: none;
+
+    position: relative;
+    display: inline-block;
+    transform-origin: center;
+    transition: none !important;
+}
+
+.bd-markdown-theme s:hover,
+.bd-markdown-theme del:hover {
+    animation: markdown-theme-strike-wiggle 0.65s step-start infinite;
+    transition: none !important;
+    will-change: transform;
+}
+
+@keyframes markdown-theme-strike-wiggle {
+    0%, 24.99% { transform: translate(0, 0); }
+    25%, 49.99% { transform: translate(-0.075rem, 0.05rem); }
+    50%, 74.99% { transform: translate(0.075rem, -0.05rem); }
+    75%, 99.99% { transform: translate(-0.05rem, -0.05rem); }
+    100% { transform: translate(0, 0); }
+}
+
+.bd-markdown-theme s::after { 
+    content: '';
+    position: absolute;
+    
+    left: 50%;
+    top: 50%;
+    transform: 
+        translateY(-50%)
+        translateX(-50%);
+    width: 100%;
+    /* height: 0.25rem; */
+
+    border-top: .125rem solid var(--color-danger);
+    border-radius: 1rem;
+    /* background-color: var(--color-danger); */
+    opacity: 60%;
+}
+
+/* 链接 */
+.bd-markdown-theme a {
+    text-decoration: none;
+    color: var(--color-link);
+    position: relative;
+}
+
+.bd-markdown-theme .bd-link-icon { 
+    display:inline-block; 
+    width:.9em; 
+    height:.9em; 
+    margin:0 .2em; 
+    vertical-align:-.08em; 
+    background:currentColor; 
+    mask:center/contain no-repeat; 
+    -webkit-mask:center/contain no-repeat; 
+
+    transition: transform 0.25s cubic-bezier(0, .2, .2, 1);
+}
+
+.bd-markdown-theme .bd-link-icon-external { 
+    mask-image:var(--icon-akar-icons-link-out-svg); 
+    -webkit-mask-image:var(--icon-akar-icons-link-out-svg); 
+}
+
+.bd-markdown-theme .bd-link-icon-article { 
+    mask-image:var(--icon-material-symbols-article-outline-rounded-svg); 
+    -webkit-mask-image:var(--icon-material-symbols-article-outline-rounded-svg); 
+    width: .95em;
+    height: .95em;
+}
+
+.bd-markdown-theme a:hover .bd-link-icon {
+    transform: scale(1.2) rotate(-7.5deg);
+}
+
+/* .bd-markdown-theme a::after { 
+    content: '';
+    position: absolute;
+    
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 0rem;
+    width: 100%;
+    height: 0.2rem;
+
+    border-radius: 1rem;
+    background-color: var(--color-link);
+} */
+
+/* 高亮 */
+.bd-markdown-theme mark { 
+    padding: 0rem 0.2rem;
+    border-radius: 0.375rem;
+
+    font-size: var(--md-font-small);
+    color: inherit;
+    background-color: var(--color-accent-soft);
+
+    transition: all 0.25s ease;
+}
+
+.bd-markdown-theme mark:hover { 
+    background-color: var(--color-accent);
+    box-shadow: 0 0 1rem var(--color-accent);
+    color: var(--color-text-on-media);
+}
+
+/* 代码 */
+.bd-markdown-theme pre { 
+    font-family: 'Maple Mono', 'Noto Sans SC', monospace !important;
+    font-size: var(--md-font-small);
+    overflow-x: auto;
+    padding: 1rem;
+    border-radius: 0.75rem;
+
+    background-color: var(--color-code-bg);
+}
+
+.bd-markdown-theme pre code { 
+    font-family: inherit;
+
+    padding: 0;
+    border-radius: 0;
+
+    background-color: transparent;
+}
+
+.bd-markdown-theme :not(pre) > code { 
+    font-family: 'Maple Mono', 'Noto Sans SC', monospace !important;
+    font-size: var(--md-font-small);
+
+    padding: 0 0.2rem;
+    border-radius: 0.375rem;
+
+    color: var(--color-code-text);
+    background-color: var(--color-code-bg);
+}
+
+/* 引用 */
+.bd-markdown-theme blockquote { 
+    background-color: var(--color-accent-muted);
+    padding: 0.25rem 1rem;
+    position: relative;
+
+    border-radius: 0.5rem;
+    transition: all 0.25s ease;
+
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.bd-markdown-theme blockquote > p { 
+    margin: 0.25rem 0 0.25rem 2rem;
+    position: relative;
+}
+
+.bd-markdown-theme blockquote::before {
+    content: '';
+    position: absolute;
+
+    left: 0.5rem;
+    top: 1.2rem;
+    width: 2rem;
+    height: 2rem;
+
+    background-color: var(--color-accent);
+    -webkit-mask-image: var(--icon-blockquote-svg);
+    mask-image: var(--icon-blockquote-svg);
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+}
+
+.bd-markdown-theme blockquote::after {
+    content: '';
+    position: absolute;
+
+    left: 0rem;
+    top: 0rem;
+    width: 0.75rem;
+    height: 100%;
+
+    border-radius: 0.5rem 0rem 0rem 0.5rem;
+    background-color: var(--color-accent);
+}
+
+.bd-markdown-theme blockquote:hover { 
+    background-color: var(--color-accent);
+    box-shadow: 0 0 1rem var(--color-accent);
+}
+
+/* 图片容器 */
+.bd-markdown-theme .bd-md-figure {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 2rem 0;
+    padding: 1rem 0;
+}
+
+/* 图片主体 */
+.bd-markdown-theme .bd-md-figure img {
+    display: block;
+    margin: 0 auto;
+
+    aspect-ratio: var(--img-w) / var(--img-h);
+    height: auto;
+
+    width: min(
+        100%, 
+        calc(var(--img-w) * 1px), 
+        calc(50vh * (var(--img-w) / var(--img-h)))
+    );
+    max-width: 75%;
+
+    object-fit: contain;
+    border-radius: 1rem;
+    min-height: 10px;
+    transition: all 0.25s ease;
+
+    @media (max-width: 768px) {
+        max-width: 90vw;
+        width: min(
+            100%, 
+            calc(var(--img-w) * 1px), 
+            calc(80vh * (var(--img-w) / var(--img-h)))
+        );
+    }
+}
+
+.bd-markdown-theme .bd-md-figure img[src]:not(.img-load-failed):not([style*="opacity: 0.5"]) {
+    opacity: 1;
+}
+
+img.img-load-failed {
+    background-color: #fcebeb; /* 浅红背景 */
+}
+
+/* 图片说明文字 */
+.bd-markdown-theme .bd-md-caption {
+    text-align: center;
+    margin-top: 0.5rem;
+
+    font-size: var(--md-font-body);
+    color: var(--color-text);
+    opacity: 0.8;
+    /* font-style: italic; */
+    position: relative;
+    padding: 0 1rem;
+}
+
+/* 图片悬停效果 */
+.bd-markdown-theme .bd-md-figure img:hover { 
+    box-shadow: 0rem 0.5rem 2.5rem -1rem rgba(0, 0, 0, 25%);
+    transform: scale(1.025) translateY(-0.5rem);
+}
+
+/* 分割线 */
+.bd-markdown-theme hr { 
+    width:75%; 
+    margin:2rem auto; 
+    border:0; 
+    border-top:.25rem dashed var(--color-accent); 
+    opacity:.5; 
+    transition:width .25s ease, opacity .25s ease; 
+}
+
+.bd-markdown-theme hr:hover { 
+    width:100%; 
+    opacity:1; 
+}
+
+/* .bd-markdown-theme .bd-hr-hightlight hr { 
+    border: none;
+    height: 0.2rem;
+    margin: 1.8rem 0;
+    border-radius: 0.1rem;
+    background-color: var(--text-hightlight);
+    box-shadow: 0 0 1rem 0.1rem var(--text-hightlight);
+    transition: all 0.25s ease;
+} */
+
+/* 列表公共样式 */
+.bd-markdown-theme li p {
+    margin: 0.8rem 0;
+    line-height: inherit;
+}
+
+.bd-markdown-theme li > p:first-of-type {
+    margin-top: 0;
+}
+
+.bd-markdown-theme li > ul,
+.bd-markdown-theme li > ol {
+    display: block;
+    clear: both;
+
+    position: relative;
+    padding-left: 2em;
+    list-style: none;
+
+    transition: all 0.25s ease;
+}
+
+.bd-markdown-theme li > ul::before,
+.bd-markdown-theme li > ol::before {
+    content: '';
+    position: absolute;
+
+    left: -1rem;
+    top: 1.1rem;
+    width: 1px;
+    bottom: 1rem;
+
+    border-radius: 1rem;
+    background-color: var(--color-accent);
+    box-shadow: 0 0 0.25rem var(--color-accent);
+}
+
+/* 有序列表 */
+.bd-markdown-theme ol {
+    list-style: none;
+    padding-left: 2em;
+}
+
+.bd-markdown-theme ol li {
+    font-size: var(--md-font-body);
+    position: relative;
+    color: var(--text-color);
+
+    transition: all 0.25s ease;
+}
+
+.bd-markdown-theme ol li::before {
+    content: counter(list-item) ".";
+    position: absolute;
+    left: -1.4rem;
+
+    color: var(--color-accent);
+    font-weight: bold;
+    text-shadow: 0 0 0.5rem var(--color-accent);
+}
+
+.bd-markdown-theme ol ol li::before {
+    color: var(--color-accent);
+}
+
+.bd-markdown-theme ol ol ol li::before {
+    -webkit-text-stroke: 1px var(--color-accent);
+    color: transparent;
+}
+
+/* 无序列表 */
+.bd-markdown-theme ul {
+    list-style: none;
+    padding-left: 2em;
+}
+
+.bd-markdown-theme ul li {
+    font-size: var(--md-font-body);
+    position: relative;
+    color: var(--text-color);
+
+    transition: all 0.25s ease;
+}
+
+.bd-markdown-theme ul li::before {
+    content: "";
+    position: absolute;
+
+    width: 0.5rem;
+    height: 0.5rem;
+    left: -1.2rem;
+    top: 0.9rem;
+
+    background-color: var(--color-accent);
+    border-radius: 50%;
+    box-shadow: 0 0 0.5rem var(--color-accent);
+}
+
+.bd-markdown-theme ul ul li::before {
+    background-color: var(--color-accent);
+}
+
+.bd-markdown-theme ul ul ul li::before {
+    border: 0.1rem solid var(--color-accent);
+    background-color: transparent;
+}
+
+/* 任务列表 */
+.bd-markdown-theme li.task-list-item {
+    list-style-type: none;
+}
+
+.bd-markdown-theme li.task-list-item input[type="checkbox"] {
+    margin-right: 1rem;
+    accent-color: var(--color-accent);
+}
+
+/* 任务列表不需要圆点 */
+.bd-markdown-theme li.task-list-item::before {
+    display: none;
+}
+
+/* 表格 */
+.bd-markdown-theme-table-wrapper { 
+    width: 100%;
+    overflow-x: auto;
+    border-radius: 0.5rem;
+    border: 0.15rem solid var(--color-accent);
+    margin: 1.5rem 0;
+    --webkit-overflow-scrolling: touch;
+}
+
+/* 表格主体 */
+.bd-markdown-theme-table-wrapper table {
+    width: 100%;
+    min-width: 10rem;
+    border-collapse: collapse;
+    margin: 0;
+}
+
+/* 表头样式 */
+.bd-markdown-theme-table-wrapper thead { 
+    background-color: var(--color-accent);
+    border: none;
+}
+
+.bd-markdown-theme-table-wrapper th,
+.bd-markdown-theme-table-wrapper td { 
+    padding: 0.5rem 1rem;
+    border-bottom: 0.15rem solid var(--color-accent-muted);
+    border-right: 0.15rem solid var(--color-accent-muted);
+}
+
+.bd-markdown-theme-table-wrapper th {
+    font-weight: 500;
+    font-size: var(--md-font-small);
+    color: var(--color-accent);
+    text-shadow: 0.05rem 0.05rem 0.05rem var(--color-text);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    /* border-bottom: 0.15rem solid var(--text-hightlight);
+    border-right: 0.15rem solid var(--text-hightlight); */
+}
+
+.bd-markdown-theme-table-wrapper td { 
+    font-size: var(--md-font-small);
+    border: 0.15rem solid var(--color-accent-muted);
+    transition: all 0.25s ease;
+}
+
+.bd-markdown-theme-table-wrapper th:first-child,
+.bd-markdown-theme-table-wrapper td:first-child {
+    border-left: none;
+}
+
+.bd-markdown-theme-table-wrapper th:last-child,
+.bd-markdown-theme-table-wrapper td:last-child {
+    border-right: none;
+}
+
+.bd-markdown-theme-table-wrapper tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.bd-markdown-theme-table-wrapper tbody tr:nth-child(even) { 
+    background-color: var(--color-surface)
+}
+
+.bd-markdown-theme-table-wrapper tbody tr:hover {
+    background-color: var(--color-accent-muted);
+}
+
+.bd-markdown-theme-table-wrapper tbody td:hover {
+    box-shadow: 0 0 1rem var(--color-accent);
+}
+
+/* 隐藏文本 */
+.bd-markdown-theme-spoiler { 
+    position: relative;
+    filter: blur(5px);
+    -webkit-filter: blur(5px);
+    transition: all 0.25s ease;
+}
+
+.bd-markdown-theme-spoiler:hover{ 
+    filter: blur(0);
+    -webkit-filter: blur(0);
+}
+
+/* 1. 基础容器：使用 inline-flex 并取消默认间距 */
+.bd-md-color-swatch {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    border: 1px solid var(--border-color);
+    background: var(--bg-zebra);
+    transition: all 0.25s ease;
+    position: relative;
+    z-index: 1;
+  }
+  
+  /* 2. 核心：连续插入时的自动拼接逻辑 */
+  .bd-md-color-swatch + .bd-md-color-swatch {
+    margin-left: -1px; /* 边框重叠，防止中间线变厚 */
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+  .bd-md-color-swatch:has(+ .bd-md-color-swatch) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+  
+  /* 3. 尺寸控制 */
+  .bd-md-color-swatch.is-s {
+    height: 1.6rem;
+    /* padding: 0 6px; */
+    border-radius: 4px;
+    font-size: var(--md-font-xs);
+  }
+  .bd-md-color-swatch.is-l {
+    height: 3rem;
+    /* padding: 0 12px; */
+    border-radius: 8px;
+    font-size: var(--md-font-body);
+  }
+  
+  /* 4. 内部元素细调 */
+  .bd-md-color-swatch .swatch-box {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+  }
+  .is-s .swatch-box { width: 1rem; height: 1rem; }
+  .is-l .swatch-box { width: 2rem; height: 2rem; }
+  
+  .bd-md-color-swatch .swatch-label {
+    margin-left: 8px;
+    color: var(--text-main);
+    background: none !important;
+    border: none !important;
+  }
+  
+  /* 悬停提升层级，确保阴影不被覆盖 */
+  .bd-md-color-swatch:hover {
+    z-index: 10;
+    border-color: var(--color-accent);
+    transform: scale(1.25);
+    box-shadow: 0 0 0.5rem var(--bg-zebra);
+  }
+
+
+/* 给文章内的主要分段（如 p, h2, pre）设置渲染优化 */
+/* .bd-markdown > p, 
+.bd-markdown > h2, 
+.bd-markdown > h3, 
+.bd-markdown > pre,
+.bd-markdown > .bd-md-figure { */
+    /* 告诉浏览器：如果这个元素不在视口内，先不要布局和绘制它 */
+    /* content-visibility: auto; */
+    /* 预估一个高度，防止滚动条抖动 */
+    /* contain-intrinsic-size: 1px 200px;  */
+/* } */
+
+/* Refined tables */
+.bd-markdown-theme-table-wrapper {
+    overflow-x: auto;
+    border: 1px solid var(--color-accent);
+    border-radius: 0.75rem;
+    background: transparent;
+    box-shadow: none;
+}
+.bd-markdown-theme-table-wrapper table {
+    width: 100%;
+    margin: 0;
+    border-collapse: collapse;
+    font-size: var(--md-font-body);
+}
+.bd-markdown-theme-table-wrapper thead {
+    background: color-mix(in srgb, var(--color-accent) 32%, transparent);
+}
+.bd-markdown-theme-table-wrapper th,
+.bd-markdown-theme-table-wrapper td {
+    padding: 0.75rem 1rem;
+    border: 1px solid color-mix(in srgb, var(--color-accent) 62%, transparent);
+    text-align: left;
+    transition: background-color 0.22s ease, box-shadow 0.22s ease;
+}
+.bd-markdown-theme-table-wrapper th {
+    color: var(--color-text);
+    text-shadow: none;
+    letter-spacing: 0;
+}
+.bd-markdown-theme-table-wrapper tbody tr:nth-child(even) { background: transparent; }
+.bd-markdown-theme-table-wrapper tbody tr:hover {
+    background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+}
+.bd-markdown-theme-table-wrapper th:hover,
+.bd-markdown-theme-table-wrapper td:hover {
+    box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+/* Material task lists */
+.bd-markdown-theme ul.contains-task-list { padding-left: 0.5rem; }
+.bd-markdown-theme li.task-list-item {
+    position: relative;
+    padding-left: 1.75rem;
+    margin: 0.55rem 0;
+    list-style: none;
+}
+.bd-markdown-theme li.task-list-item input[type="checkbox"] {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    display: grid;
+    place-content: center;
+    width: 1.15rem;
+    height: 1.15rem;
+    margin: 0;
+    appearance: none;
+    border: 2px solid var(--color-accent);
+    border-radius: 0.22rem;
+    background: transparent;
+    opacity: 1;
+    cursor: default;
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.bd-markdown-theme li.task-list-item input[type="checkbox"]::before {
+    content: '';
+    width: 0.5rem;
+    height: 0.28rem;
+    border-left: 2px solid var(--color-text);
+    border-bottom: 2px solid var(--color-text);
+    opacity: 0;
+    transform: translateY(-0.08rem) rotate(-45deg) scale(0.5);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.bd-markdown-theme li.task-list-item input[type="checkbox"]:checked {
+    border-color: var(--color-accent);
+    background: var(--color-accent);
+}
+.bd-markdown-theme li.task-list-item input[type="checkbox"]:checked::before {
+    opacity: 1;
+    transform: translateY(-0.08rem) rotate(-45deg) scale(1);
+}
+.bd-markdown-theme li.task-list-item:hover input[type="checkbox"] {
+    box-shadow: 0 0 0 0.3rem color-mix(in srgb, var(--color-accent) 18%, transparent);
+}
+
+/* Quote and alert cards */
+.bd-markdown-theme blockquote {
+    --quote-color: var(--color-accent);
+    position: relative;
+    margin: 1.5rem 0;
+    padding: 3rem 1.25rem 1.15rem;
+    border: 1px solid color-mix(in srgb, var(--quote-color) 48%, transparent);
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg,
+        color-mix(in srgb, var(--quote-color) 12%, transparent),
+        color-mix(in srgb, var(--quote-color) 3%, transparent));
+    box-shadow: 0 0 0 color-mix(in srgb, var(--quote-color) 0%, transparent);
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.32s ease;
+}
+.bd-markdown-theme blockquote:hover {
+    background: linear-gradient(135deg,
+        color-mix(in srgb, var(--quote-color) 12%, transparent),
+        color-mix(in srgb, var(--quote-color) 3%, transparent));
+    transform: scale(1.012);
+    box-shadow: 0 0.55rem 1.5rem color-mix(in srgb, var(--quote-color) 25%, transparent);
+}
+
+.bd-markdown-theme blockquote > p { margin: 0.35rem 0; }
+.bd-markdown-theme blockquote::after { display: none; }
+.bd-markdown-theme blockquote::before {
+    left: 1.15rem;
+    top: 1rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    background: var(--quote-color);
+    rotate: 180deg;
+    -webkit-mask-image: var(--icon-material-symbols-format-quote-rounded-svg);
+    mask-image: var(--icon-material-symbols-format-quote-rounded-svg);
+    transition: transform 0.25s cubic-bezier(0, .2, .2, 1);
+}
+
+.bd-markdown-theme blockquote:hover::before {
+    transform: scale(1.5) rotate(-7.5deg);
+}
+
+.bd-markdown-theme .markdown-alert {
+    --quote-color: var(--alert-color);
+    padding-top: 3.125rem;
+}
+.bd-markdown-theme .markdown-alert::before { display: none; }
+.bd-markdown-theme .markdown-alert-title {
+    position: absolute;
+    top: 1.125rem;
+    left: 1.15rem;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    color: var(--alert-color);
+    font-size: var(--md-font-small);
+    font-weight: 700;
+    line-height: 1;
+    user-select: none;
+}
+.bd-markdown-theme .markdown-alert-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    flex: 0 0 1.5rem;  
+    background: currentColor;
+    -webkit-mask: center / contain no-repeat;
+    mask: center / contain no-repeat;
+    transition: transform 0.25s cubic-bezier(0, .2, .2, 1);
+}
+.bd-markdown-theme .markdown-alert-note .markdown-alert-icon { -webkit-mask-image: var(--icon-fa7-solid-circle-info-svg); mask-image: var(--icon-fa7-solid-circle-info-svg); }
+.bd-markdown-theme .markdown-alert-tip .markdown-alert-icon { -webkit-mask-image: var(--icon-fa7-solid-lightbulb-svg); mask-image: var(--icon-fa7-solid-lightbulb-svg); }
+.bd-markdown-theme .markdown-alert-important .markdown-alert-icon { -webkit-mask-image: var(--icon-fa7-solid-star-svg); mask-image: var(--icon-fa7-solid-star-svg); }
+.bd-markdown-theme .markdown-alert-warning .markdown-alert-icon { -webkit-mask-image: var(--icon-fa7-solid-exclamation-triangle-svg); mask-image: var(--icon-fa7-solid-exclamation-triangle-svg); }
+.bd-markdown-theme .markdown-alert-caution .markdown-alert-icon { -webkit-mask-image: var(--icon-fa7-solid-xmark-circle-svg); mask-image: var(--icon-fa7-solid-xmark-circle-svg); }
+.bd-markdown-theme .markdown-alert-note { --alert-color: #4f8fe8; }
+.bd-markdown-theme .markdown-alert-tip { --alert-color: var(--color-success); }
+.bd-markdown-theme .markdown-alert-important { --alert-color: #8067d5; }
+.bd-markdown-theme .markdown-alert-warning { --alert-color: var(--color-warning); }
+.bd-markdown-theme .markdown-alert-caution { --alert-color: var(--color-danger); }
+
+.bd-markdown-theme .markdown-alert:hover .markdown-alert-icon {
+    transform: scale(1.5) rotate(-7.5deg);
+}
+
+/* Numbered code blocks with an on-hover copy action */
+.bd-markdown-theme .bd-code-block {
+    position: relative;
+    margin: 1.5rem 0;
+}
+.bd-markdown-theme .bd-code-block pre {
+    margin: 0;
+    padding: 1rem 0;
+    border-radius: 0.75rem;
+    background-color: var(--color-code-bg);
+    overflow-x: auto;
+    overflow-y: hidden;
+    clip-path: inset(0 round 0.75rem);
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-accent) transparent;
+}
+
+.bd-markdown-theme .bd-code-block pre::-webkit-scrollbar {
+    width: 4px;
+}
+
+.bd-markdown-theme .bd-code-block pre::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.bd-markdown-theme .bd-code-block pre::-webkit-scrollbar-thumb {
+    background-color: var(--color-accent);
+    border-radius: 2px;
+}
+
+.bd-markdown-theme .bd-code-block pre code {
+    display: block;
+    min-width: max-content;
+}
+.bd-markdown-theme .bd-code-line {
+    display: grid;
+    grid-template-columns: 3.25rem minmax(0, 1fr);
+    min-height: 1.55em;
+    padding-right: 4.5rem;
+    white-space: pre;
+}
+.bd-markdown-theme .bd-code-line-number {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    /* background: var(--color-code-bg); */
+    align-self: stretch;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding-right: .875rem;
+    border-right: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
+    color: color-mix(in srgb, var(--color-code-text) 45%, transparent);
+    text-align: right;
+    user-select: none;
+}
+.bd-markdown-theme .bd-code-line-content { padding-left: 1rem; }
+.bd-markdown-theme .bd-code-copy {
+    position: absolute;
+    z-index: 2;
+    top: 0.65rem;
+    right: 0.65rem;
+    display: grid;
+    place-items: center;
+    width: 2.35rem;
+    height: 2rem;
+    padding: 0;
+    border: 1px solid color-mix(in srgb, var(--color-accent) 48%, transparent);
+    border-radius: 0.55rem;
+    background: color-mix(in srgb, var(--color-code-bg) 88%, transparent);
+    color: var(--color-accent);
+    opacity: 0;
+    cursor: pointer;
+    transform: translateY(-0.2rem);
+    transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+}
+.bd-markdown-theme .bd-code-block:hover .bd-code-copy,
+.bd-markdown-theme .bd-code-copy:focus-visible,
+.bd-markdown-theme .bd-code-copy.is-copied {
+    opacity: 1;
+    transform: translateY(0);
+}
+.bd-markdown-theme .bd-code-copy:hover {
+    background: color-mix(in srgb, var(--color-accent) 16%, var(--color-code-bg));
+}
+.bd-markdown-theme .bd-code-copy svg {
+    position: absolute;
+    width: 1.15rem;
+    height: 1.15rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.bd-markdown-theme .bd-code-check-icon { opacity: 0; transform: scale(0.65); }
+.bd-markdown-theme .bd-code-copy.is-copied .bd-code-copy-icon { opacity: 0; transform: scale(0.65); }
+.bd-markdown-theme .bd-code-copy.is-copied .bd-code-check-icon { opacity: 1; transform: scale(1); }
+
+/* Mermaid */
+.bd-mermaid {
+    margin: 1.5rem 0;
+    padding: 0;
+    overflow-x: auto;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+.bd-markdown-theme .bd-mermaid .mermaid {
+    display: flex;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent !important;
+}
+.bd-mermaid svg { max-width: 100%; height: auto; background: transparent !important; }
+.bd-mermaid svg,
+.bd-mermaid svg text,
+.bd-mermaid svg foreignObject,
+.bd-mermaid svg foreignObject * {
+    font-family: 'Noto Sans SC', sans-serif !important;
+}
+.bd-mermaid .node rect,
+.bd-mermaid .node circle,
+.bd-mermaid .node ellipse,
+.bd-mermaid .node polygon,
+.bd-mermaid .cluster rect {
+    stroke: var(--color-accent) !important;
+}
+.bd-mermaid .edgePath path,
+.bd-mermaid .flowchart-link {
+    stroke: var(--color-accent-strong) !important;
+}
+.bd-mermaid marker path { fill: var(--color-accent-strong) !important; }
+
+/* Inline custom marks */
+.bd-markdown-theme .bd-markdown-whisper {
+    display:inline;
+    font-size: var(--md-font-whisper);
+    line-height: 1.65;
+    color: var(--color-text-secondary);
+}
+.bd-markdown-theme .bd-markdown-loud { 
+    display:inline; 
+    font-size:calc(var(--md-font-body) + .25rem); 
+    line-height:inherit; 
+    color:var(--color-text); 
+}
+
+.bd-markdown-theme .bd-markdown-no-parse-inline {
+    display: inline;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font: inherit;
+    color: inherit;
+}
+
+.bd-markdown-theme .bd-markdown-inner-thought { 
+    display:inline-block; 
+    animation:markdown-theme-strike-wiggle .7s step-start infinite; 
+    will-change:transform; 
+}
+
+@media (max-width: 768px) {
+    .bd-markdown-theme .bd-code-copy {
+        opacity: 0.82;
+        transform: none;
+    }
+    .bd-markdown-theme .bd-code-line {
+        grid-template-columns: 2.75rem minmax(0, 1fr);
+        padding-right: 3.75rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bd-markdown-theme blockquote:hover { transform: none; }
+    .bd-markdown-theme blockquote:hover::before { transform: none; }
+    .bd-markdown-theme s:hover,
+    .bd-markdown-theme del:hover { animation: none; }
+}
+
+@media (max-width: 768px) {
+    .bd-markdown-theme {
+        --md-font-body: 1rem;
+        --md-font-h1: 1.875rem;
+        --md-font-h2: 1.625rem;
+        --md-font-h3: 1.5rem;
+        --md-font-h4: 1.25rem;
+        --md-font-h5: 1.125rem;
+        --md-font-h6: 1rem;
+        --md-font-small: 0.875rem;
+        --md-font-xs: 0.75rem;
+        --md-font-whisper: 0.5rem;
+        --md-font-dropcap: 3.375rem;
+    }
+}
+

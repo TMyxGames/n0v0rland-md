@@ -8,6 +8,8 @@
   },
   "dependencies": {
     "@n0v0rland-md/markdown-it-adapter": "workspace:*",
+    "@n0v0rland-md/preset": "workspace:*",
+    "@n0v0rland-md/theme": "workspace:*",
     "@n0v0rland-md/vue": "workspace:*",
     "markdown-it": "^14.1.0",
     "vue": "^3.5.0"

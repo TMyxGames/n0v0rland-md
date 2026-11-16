@@ -7,6 +7,7 @@ export interface MarkdownItLike {
     meta?: { label?: string }
   }>
   render(source: string, env?: Record<string, unknown>): string
+  parseInline?(source: string, env?: Record<string, unknown>): unknown[]
 }
 
 export interface MarkdownBlockParser {
@@ -17,6 +18,7 @@ export interface MarkdownItAdapterOptions {
   markdown: MarkdownItLike
   profile: 'article' | 'comment'
   fallback?: 'raw' | 'throw'
+  render?: (source: string, env?: Record<string, unknown>) => string
 }
 
 export interface MarkdownItAdapter {
@@ -37,7 +39,7 @@ export function createMarkdownItAdapter(options: MarkdownItAdapterOptions): Mark
       },
     },
     render(source, env = {}) {
-      return markdown.render(source, env)
+      return options.render ? options.render(source, env) : markdown.render(source, env)
     },
   }
 }

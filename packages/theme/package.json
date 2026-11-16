@@ -1,0 +1,10 @@
+{
+  "name": "@n0v0rland-md/theme",
+  "version": "0.1.0",
+  "type": "module",
+  "private": false,
+  "exports": {
+    ".": "./src/semantic.css",
+    "./icons.css": "./src/icons.css"
+  }
+}
