@@ -82,8 +82,14 @@ watch(current, value => {
   emit('update:modelValue', value)
   emit('validity', !props.maxLength || value.length <= props.maxLength)
 }, { immediate: true })
+watch([() => props.showSource, () => props.showPreview], () => {
+  if (mode.value === 'source' && props.showSource === false) mode.value = 'visual'
+  if (mode.value === 'preview' && props.showPreview === false) mode.value = 'visual'
+})
 
 function setMode(value: MarkdownEditorMode) {
+  if (value === 'source' && props.showSource === false) return
+  if (value === 'preview' && props.showPreview === false) return
   mode.value = value
 }
 
