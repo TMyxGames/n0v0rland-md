@@ -1,39 +1,21 @@
 <template>
   <section class="mde" :class="[`mde--${profile}`, `mde--${mode}`]">
-    <header class="mde__header">
-      <div class="mde__modes" role="group" aria-label="编辑模式">
-        <button v-for="item in modes" :key="item.value" type="button" :class="{ 'is-active': mode === item.value }" @click="mode = item.value">
-          {{ item.label }}
-        </button>
-      </div>
-      <div v-if="mode === 'visual'" class="mde__toolbar" role="toolbar" aria-label="Markdown 工具">
-        <button v-for="tool in visibleToolbar" :key="tool" type="button" @mousedown.prevent @click="insertSyntax(tool)">
-          {{ toolLabels[tool] || tool }}
-        </button>
-      </div>
-    </header>
+    <slot name="toolbar" :mode="mode" :tools="visibleToolbar" :set-mode="setMode" :insert-syntax="insertSyntax">
+      <MarkdownToolbar :mode="mode" :tools="visibleToolbar" @set-mode="setMode" @insert-syntax="insertSyntax" />
+    </slot>
 
-    <div class="mde__panel">
-      <MarkdownVisualEditor
-        v-if="mode === 'visual'"
-        ref="visual"
+    <slot name="input" :mode="mode">
+      <MarkdownInput
+        ref="input"
         v-model="current"
+        :mode="mode"
         :profile="profile"
         :adapter="adapter"
         :disabled="disabled"
         :placeholder="placeholder"
+        :max-length="maxLength"
       />
-      <textarea
-        v-else-if="mode === 'source'"
-        v-model="current"
-        class="mde__source"
-        :disabled="disabled"
-        :placeholder="placeholder"
-        :maxlength="maxLength || undefined"
-        spellcheck="false"
-      />
-      <div v-else class="mde__preview bd-markdown-theme" v-html="adapter.render(current)" />
-    </div>
+    </slot>
 
     <footer class="mde__status">
       <span>{{ current.length }}{{ maxLength ? ` / ${maxLength}` : '' }}</span>
@@ -44,7 +26,8 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import MarkdownVisualEditor from './MarkdownVisualEditor.vue'
+import MarkdownInput from './MarkdownInput.vue'
+import MarkdownToolbar from './MarkdownToolbar.vue'
 import type { MarkdownEditorExpose, MarkdownEditorMode, MarkdownEditorProfile, MarkdownEditorAdapter } from './types'
 
 const props = withDefaults(defineProps<{
@@ -68,29 +51,9 @@ const emit = defineEmits<{
 
 const current = ref(props.modelValue)
 const mode = ref<MarkdownEditorMode>('visual')
-const visual = ref<InstanceType<typeof MarkdownVisualEditor> | null>(null)
-const modes = [
-  { value: 'visual' as const, label: '编辑' },
-  { value: 'source' as const, label: '源码' },
-  { value: 'preview' as const, label: '预览' },
-]
+const input = ref<InstanceType<typeof MarkdownInput> | null>(null)
 const defaultArticleToolbar = ['heading', 'blockquote', 'alert', 'table', 'codeBlock', 'mermaid']
 const defaultCommentToolbar = ['bold', 'italic', 'underline', 'strike', 'code', 'spoiler', 'whisper']
-const toolLabels: Record<string, string> = {
-  heading: '标题',
-  blockquote: '引用',
-  alert: '提示块',
-  table: '表格',
-  codeBlock: '代码块',
-  mermaid: '图表',
-  bold: '粗体',
-  italic: '斜体',
-  underline: '下划线',
-  strike: '删除线',
-  code: '代码',
-  spoiler: '隐藏',
-  whisper: '小声',
-}
 const visibleToolbar = computed(() => props.toolbar || (props.profile === 'comment' ? defaultCommentToolbar : defaultArticleToolbar))
 
 watch(() => props.modelValue, value => {
@@ -101,6 +64,10 @@ watch(current, value => {
   emit('validity', !props.maxLength || value.length <= props.maxLength)
 }, { immediate: true })
 
+function setMode(value: MarkdownEditorMode) {
+  mode.value = value
+}
+
 function insertSyntax(kind: string) {
   const syntax: Record<string, [string, string]> = {
     bold: ['**', '**'],
@@ -110,6 +77,8 @@ function insertSyntax(kind: string) {
     code: ['`', '`'],
     spoiler: ['||', '||'],
     whisper: ['::whisper[', ']'],
+    loud: ['::loud[', ']'],
+    inner: ['::inner[', ']'],
     heading: ['# ', ''],
     blockquote: ['> ', ''],
     alert: ['> [!note]\n> ', ''],
@@ -118,14 +87,14 @@ function insertSyntax(kind: string) {
     mermaid: ['```mermaid\\n', '\\n```'],
   }
   const [before, after] = syntax[kind] || [kind, '']
-  visual.value?.insertSyntax(before, after)
+  input.value?.insertSyntax(before, after)
 }
 
 defineExpose<MarkdownEditorExpose>({
-  focus: () => visual.value?.focus(),
-  sync: () => visual.value?.sync() || current.value,
+  focus: () => input.value?.focus(),
+  sync: () => input.value?.sync() || current.value,
   insertSyntax,
-  setMode: value => { mode.value = value },
+  setMode,
 })
 </script>
 
@@ -137,7 +106,7 @@ defineExpose<MarkdownEditorExpose>({
   background: var(--mde-surface, var(--color-surface, #fff));
 }
 
-.mde__header {
+.mde__toolbar-shell {
   display: flex;
   flex-wrap: wrap;
   gap: .5rem;
@@ -150,6 +119,7 @@ defineExpose<MarkdownEditorExpose>({
   display: flex;
   flex-wrap: wrap;
   gap: var(--mde-toolbar-gap, .25rem);
+  align-items: center;
 }
 
 .mde button {

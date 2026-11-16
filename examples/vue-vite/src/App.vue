@@ -1,5 +1,5 @@
 <template>
-  <main class="playground mde-theme" :data-color-mode="dark ? 'dark' : 'light'">
+  <main class="playground mde-theme mde-classic" :data-color-mode="dark ? 'dark' : 'light'">
     <header class="playground__header">
       <strong>n0v0rland-md Playground</strong>
       <div class="playground__actions">
@@ -8,8 +8,21 @@
         </button>
         <button type="button" @click="dark = !dark">{{ dark ? '亮色主题' : '暗色主题' }}</button>
       </div>
+      <MarkdownToolbar
+        class="playground__toolbar"
+        :mode="mode"
+        :tools="tools"
+        @set-mode="mode = $event"
+        @insert-syntax="insertSyntax"
+      />
     </header>
-    <MarkdownEditor v-model="markdown" :profile="profile" :adapter="adapter" />
+    <MarkdownInput
+      ref="input"
+      v-model="markdown"
+      :mode="mode"
+      :profile="profile"
+      :adapter="adapter"
+    />
   </main>
 </template>
 
@@ -17,19 +30,37 @@
 import { computed, ref } from 'vue'
 import { createMarkdownItAdapter } from '@n0v0rland-md/markdown-it-adapter'
 import { createSiteMarkdown } from '@n0v0rland-md/preset'
-import { MarkdownEditor } from '@n0v0rland-md/vue'
+import { MarkdownInput, MarkdownToolbar } from '@n0v0rland-md/vue'
+import type { MarkdownEditorMode, MarkdownInputExpose } from '@n0v0rland-md/vue'
 import '@n0v0rland-md/theme'
+import '@n0v0rland-md/theme/classic.css'
 import '@n0v0rland-md/theme/icons.css'
 
 const markdown = ref('# n0v0rland-md\n\n输入 **粗体**、||隐藏||、::loud[大声] 或 `代码` 查看可视化效果。\n\n> [!tip] 提示块\n> 这是使用站点 Markdown-it preset 的预览。')
 const profile = ref<'article' | 'comment'>('article')
+const mode = ref<MarkdownEditorMode>('visual')
 const dark = ref(false)
+const input = ref<MarkdownInputExpose | null>(null)
 const siteMarkdown = createSiteMarkdown({ siteOrigin: 'https://n0v0rland.xyz' })
-const adapter = computed(() => createMarkdownItAdapter({
-  markdown: profile.value === 'article' ? siteMarkdown.md : siteMarkdown.commentMd,
-  profile: profile.value,
-  render: profile.value === 'article' ? undefined : siteMarkdown.renderCommentMarkdown,
-}))
+const adapter = createMarkdownItAdapter({
+  markdown: siteMarkdown.md,
+  profile: 'article',
+})
+const tools = computed(() => profile.value === 'article'
+  ? ['heading', 'blockquote', 'alert', 'table', 'codeBlock', 'mermaid']
+  : ['bold', 'italic', 'underline', 'strike', 'code', 'spoiler', 'whisper'])
+
+function insertSyntax(kind: string) {
+  const syntax: Record<string, [string, string]> = {
+    bold: ['**', '**'], italic: ['*', '*'], underline: ['++', '++'], strike: ['~~', '~~'],
+    code: ['`', '`'], spoiler: ['||', '||'], whisper: ['::whisper[', ']'],
+    heading: ['# ', ''], blockquote: ['> ', ''], alert: ['> [!note]\n> ', ''],
+    table: ['| 列 1 | 列 2 |\\n| --- | --- |\\n| ', ' |  |'],
+    codeBlock: ['```\\n', '\\n```'], mermaid: ['```mermaid\\n', '\\n```'],
+  }
+  const [before, after] = syntax[kind] || [kind, '']
+  input.value?.insertSyntax(before, after)
+}
 </script>
 
 <style>
@@ -94,6 +125,7 @@ body {
   top: 1rem;
   left: 50%;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
@@ -105,6 +137,12 @@ body {
   background: color-mix(in srgb, var(--color-surface) 92%, transparent);
   transform: translateX(-50%);
   backdrop-filter: blur(10px);
+}
+
+.playground__header > .mde__toolbar-shell {
+  flex: 1 1 100%;
+  padding: .35rem 0 0;
+  border: 0;
 }
 
 .playground__actions {
@@ -133,6 +171,16 @@ body {
   margin-top: 4rem;
 }
 
+.playground > .mde__panel {
+  width: min(100%, 1100px);
+  min-height: calc(100vh - 2rem);
+  margin-top: 4rem;
+  padding: 1.25rem;
+  border: 1px solid var(--color-surface-border);
+  border-radius: .5rem;
+  background: var(--color-surface);
+}
+
 @media (max-width: 768px) {
   .playground {
     padding: 0;
@@ -143,6 +191,14 @@ body {
     border-radius: 0;
     --mde-min-height: 100vh;
     margin-top: 3.5rem;
+  }
+
+  .playground > .mde__panel {
+    width: 100%;
+    min-height: 100vh;
+    margin-top: 3.5rem;
+    border: 0;
+    border-radius: 0;
   }
 
   .playground__header {

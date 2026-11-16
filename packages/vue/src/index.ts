@@ -1,5 +1,7 @@
 export * from './types'
 export { default as MarkdownEditor } from './MarkdownEditor.vue'
 export { default as MarkdownVisualEditor } from './MarkdownVisualEditor.vue'
+export { default as MarkdownInput } from './MarkdownInput.vue'
+export { default as MarkdownToolbar } from './MarkdownToolbar.vue'
 import './styles/editor.css'
 import './styles/visual.css'

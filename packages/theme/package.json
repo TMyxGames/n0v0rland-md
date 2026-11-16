@@ -5,6 +5,7 @@
   "private": false,
   "exports": {
     ".": "./src/semantic.css",
+    "./classic.css": "./src/classic.css",
     "./icons.css": "./src/icons.css"
   }
 }

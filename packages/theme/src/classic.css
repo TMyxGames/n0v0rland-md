@@ -1,0 +1,126 @@
+.mde-classic {
+  --mde-font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --md-font-body: 1rem;
+  --md-font-h1: 2rem;
+  --md-font-h2: 1.65rem;
+  --md-font-h3: 1.35rem;
+  --md-font-h4: 1.15rem;
+  --md-font-h5: 1rem;
+  --md-font-h6: .95rem;
+  --md-font-small: .9rem;
+  --md-font-xs: .8rem;
+  --md-font-whisper: .75rem;
+  --md-font-dropcap: 3.2rem;
+  --mde-surface: #fff;
+  --mde-border: #d0d7de;
+  --color-text: #24292f;
+  --color-text-secondary: #57606a;
+  --color-text-muted: #6e7781;
+  --color-page: #f6f8fa;
+  --color-surface: #fff;
+  --color-surface-border: #d0d7de;
+  --color-accent: #0969da;
+  --color-accent-soft: #ddf4ff;
+  --color-accent-muted: #b6e3ff;
+  --color-markdown-syntax: #3b7d50;
+}
+
+.mde-classic[data-color-mode="dark"] {
+  --mde-surface: #161b22;
+  --mde-border: #30363d;
+  --color-text: #e6edf3;
+  --color-text-secondary: #8b949e;
+  --color-text-muted: #8b949e;
+  --color-page: #0d1117;
+  --color-surface: #161b22;
+  --color-surface-border: #30363d;
+  --color-accent: #58a6ff;
+  --color-accent-soft: #1f3b54;
+  --color-accent-muted: #245477;
+  --color-markdown-syntax: #8bc69a;
+}
+
+.mde-classic .bd-markdown-theme {
+  color: var(--color-text);
+  font-family: var(--mde-font-family);
+  font-size: var(--md-font-body);
+  line-height: 1.7;
+  letter-spacing: normal;
+}
+
+.mde-classic .bd-markdown-theme h1,
+.mde-classic .bd-markdown-theme h2,
+.mde-classic .bd-markdown-theme h3,
+.mde-classic .bd-markdown-theme h4,
+.mde-classic .bd-markdown-theme h5,
+.mde-classic .bd-markdown-theme h6 {
+  margin: 1.2em 0 .6em;
+  color: var(--color-text);
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.mde-classic .bd-markdown-theme h1 { text-align: left; }
+.mde-classic .bd-markdown-theme p { margin: .75em 0; }
+.mde-classic .bd-markdown-theme a { color: var(--color-accent); }
+.mde-classic .bd-markdown-theme blockquote {
+  margin: 1em 0;
+  padding: .1em 1em;
+  border-left: .25rem solid var(--color-surface-border);
+  color: var(--color-text-secondary);
+  background: color-mix(in srgb, var(--color-surface-border) 18%, transparent);
+  box-shadow: none;
+}
+
+.mde-classic .bd-markdown-theme pre,
+.mde-classic .bd-markdown-theme .bd-code-block {
+  padding: 1rem;
+  border: 1px solid var(--color-surface-border);
+  border-radius: .4rem;
+  background: color-mix(in srgb, var(--color-page) 88%, var(--color-text) 12%);
+  overflow: auto;
+}
+
+.mde-classic .bd-markdown-theme :not(pre) > code {
+  padding: .15em .35em;
+  border-radius: .25rem;
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-surface-border) 55%, transparent);
+}
+
+.mde-classic .bd-markdown-theme table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.mde-classic .bd-markdown-theme th,
+.mde-classic .bd-markdown-theme td {
+  padding: .45rem .65rem;
+  border: 1px solid var(--color-surface-border);
+  text-align: left;
+}
+
+.mde-classic .bd-markdown-theme th {
+  background: color-mix(in srgb, var(--color-surface-border) 30%, transparent);
+}
+
+.mde-classic .bd-markdown-theme hr {
+  border: 0;
+  border-top: 1px solid var(--color-surface-border);
+}
+
+.mde-classic .bd-markdown-theme .bd-markdown-theme-spoiler {
+  filter: blur(4px);
+}
+
+.mde-classic .bd-markdown-theme .bd-markdown-theme-spoiler:hover,
+.mde-classic .bd-markdown-theme .bd-markdown-theme-spoiler:focus {
+  filter: none;
+}
+
+.mde-classic .markdown-visual-editor {
+  color: var(--color-text);
+  font-family: var(--mde-font-family);
+  font-size: var(--md-font-body);
+  line-height: 1.7;
+}

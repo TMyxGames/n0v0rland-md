@@ -27,3 +27,9 @@ export interface MarkdownEditorExpose {
   insertSyntax(kind: string): void
   setMode(mode: MarkdownEditorMode): void
 }
+
+export interface MarkdownInputExpose {
+  focus(): void
+  sync(): string
+  insertSyntax(before: string, after?: string): void
+}

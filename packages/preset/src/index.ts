@@ -569,3 +569,7 @@ const renderCommentMarkdown = value => {
 return { md, commentMd, renderCommentMarkdown };
 }
 
+export function createMarkdownItPreset(options: { siteOrigin?: string } = {}) {
+    return createSiteMarkdown(options).md;
+}
+
