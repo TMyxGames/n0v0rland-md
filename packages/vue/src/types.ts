@@ -3,13 +3,8 @@ export type MarkdownEditorProfile = 'article' | 'comment'
 
 export interface MarkdownEditorAdapter {
   profile: MarkdownEditorProfile
-  markdown: {
-    parse(source: string, env: Record<string, any>): unknown[]
-    render(source: string, env?: Record<string, unknown>): string
-  }
-  parser: {
-    parse(source: string, env: Record<string, any>): unknown[]
-  }
+  markdown: any
+  parser: any
   render(source: string, env?: Record<string, unknown>): string
 }
 

@@ -1,1 +1,4 @@
 export * from './types'
+export { default as MarkdownEditor } from './MarkdownEditor.vue'
+export { default as MarkdownVisualEditor } from './MarkdownVisualEditor.vue'
+import './styles/editor.css'
