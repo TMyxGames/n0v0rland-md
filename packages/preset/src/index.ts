@@ -58,7 +58,7 @@ preferHttpsForBareLinks(md.linkify);
 // 正文与评论共用站内文章识别，避免两处的链接图标行为不一致。
 const articleBloomIdFromUrl = (value: string) => {
     try {
-        const origin = options.siteOrigin || 'https://n0v0rland.xyz';
+        const origin = options.siteOrigin || 'https://localhost.invalid';
         const url = new URL(value, origin);
         if (url.hostname.replace(/^www\./, '') !== new URL(origin).hostname.replace(/^www\./, '')) return '';
         return decodeURIComponent(url.pathname.match(/^\/note\/([^/]+)/i)?.[1] || '');

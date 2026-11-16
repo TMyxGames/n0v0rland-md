@@ -16,7 +16,7 @@ export interface MarkdownBlockParser {
 
 export interface MarkdownItAdapterOptions {
   markdown: MarkdownItLike
-  profile: 'article' | 'comment'
+  profile?: 'article' | 'comment'
   fallback?: 'raw' | 'throw'
   render?: (source: string, env?: Record<string, unknown>) => string
 }
@@ -29,7 +29,7 @@ export interface MarkdownItAdapter {
 }
 
 export function createMarkdownItAdapter(options: MarkdownItAdapterOptions): MarkdownItAdapter {
-  const { markdown, profile } = options
+  const { markdown, profile = 'article' } = options
   return {
     profile,
     markdown,
