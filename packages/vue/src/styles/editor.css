@@ -1,0 +1,48 @@
+.mde {
+  --mde-min-height: 18rem;
+  --mde-panel-padding: 1rem;
+  --mde-toolbar-gap: .5rem;
+  --mde-toolbar-button-size: 2.25rem;
+  --mde-font-size: inherit;
+  min-width: 0;
+  color: var(--mde-color-text, inherit);
+}
+
+.mde__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mde-toolbar-gap);
+  align-items: center;
+}
+
+.mde__panel {
+  min-height: var(--mde-min-height);
+  padding: var(--mde-panel-padding);
+  font-size: var(--mde-font-size);
+}
+
+.mde--comment {
+  --mde-min-height: 8rem;
+  --mde-panel-padding: .5rem;
+  --mde-toolbar-gap: .25rem;
+  --mde-toolbar-button-size: 2rem;
+}
+
+@media (max-width: 768px) {
+  .mde__toolbar {
+    row-gap: .35rem;
+  }
+
+  .mde__panel {
+    min-height: max(8rem, var(--mde-min-height));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mde *,
+  .mde *::before,
+  .mde *::after {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
+}
