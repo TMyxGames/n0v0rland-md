@@ -1,7 +1,7 @@
 <template>
   <section class="mde" :class="[`mde--${profile}`, `mde--${mode}`]">
     <slot name="toolbar" :mode="mode" :tools="visibleToolbar" :set-mode="setMode" :insert-syntax="insertSyntax">
-      <MarkdownToolbar :mode="mode" :tools="visibleToolbar" @set-mode="setMode" @insert-syntax="insertSyntax" />
+      <MarkdownToolbar :mode="mode" :tools="visibleToolbar" :upload-images="uploadImages" @set-mode="setMode" @insert-syntax="insertSyntax" @insert-image="insertImage" />
     </slot>
 
     <slot name="input" :mode="mode">
@@ -16,6 +16,7 @@
         :max-length="maxLength"
         :highlight-code="highlightCode"
         :render-mermaid="renderMermaid"
+        :on-link-click="onLinkClick"
       />
     </slot>
 
@@ -30,7 +31,7 @@
 import { computed, ref, watch } from 'vue'
 import MarkdownInput from './MarkdownInput.vue'
 import MarkdownToolbar from './MarkdownToolbar.vue'
-import type { MarkdownEditorExpose, MarkdownEditorMode, MarkdownEditorProfile, MarkdownEditorAdapter, MarkdownHighlightCode, MarkdownRenderMermaid } from './types'
+import type { MarkdownEditorExpose, MarkdownEditorMode, MarkdownEditorProfile, MarkdownEditorAdapter, MarkdownHighlightCode, MarkdownLinkHandler, MarkdownRenderMermaid, MarkdownUploadImages } from './types'
 
 const props = withDefaults(defineProps<{
   modelValue: string
@@ -42,6 +43,8 @@ const props = withDefaults(defineProps<{
   toolbar?: string[]
   highlightCode?: MarkdownHighlightCode
   renderMermaid?: MarkdownRenderMermaid
+  uploadImages?: MarkdownUploadImages
+  onLinkClick?: MarkdownLinkHandler
 }>(), {
   profile: 'article',
   disabled: false,
@@ -92,6 +95,10 @@ function insertSyntax(kind: string) {
   }
   const [before, after] = syntax[kind] || [kind, '']
   input.value?.insertSyntax(before, after)
+}
+
+function insertImage(url: string) {
+  input.value?.insertSyntax(`![图片](${url})`, '')
 }
 
 defineExpose<MarkdownEditorExpose>({

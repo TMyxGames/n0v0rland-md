@@ -8,6 +8,7 @@
       :adapter="adapter"
       :highlight-code="highlightCode"
       :render-mermaid="renderMermaid"
+      :on-link-click="onLinkClick"
       :disabled="disabled"
       :placeholder="placeholder"
     />
@@ -27,7 +28,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import MarkdownVisualEditor from './MarkdownVisualEditor.vue'
-import type { MarkdownEditorAdapter, MarkdownEditorMode, MarkdownEditorProfile, MarkdownHighlightCode, MarkdownInputExpose, MarkdownRenderMermaid } from './types'
+import type { MarkdownEditorAdapter, MarkdownEditorMode, MarkdownEditorProfile, MarkdownHighlightCode, MarkdownInputExpose, MarkdownLinkHandler, MarkdownRenderMermaid } from './types'
 
 const props = withDefaults(defineProps<{
   modelValue: string
@@ -39,6 +40,7 @@ const props = withDefaults(defineProps<{
   maxLength?: number
   highlightCode?: MarkdownHighlightCode
   renderMermaid?: MarkdownRenderMermaid
+  onLinkClick?: MarkdownLinkHandler
 }>(), {
   profile: 'article',
   disabled: false,

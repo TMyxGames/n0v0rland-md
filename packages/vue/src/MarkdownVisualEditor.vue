@@ -37,7 +37,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { MarkdownSourceDocument, domPositionFromSourceOffset, sourceOffsetFromDOM, adjacentSourceOffset, listLineBreak, quoteLineBreak, structuralPrefix } from '@n0v0rland-md/core'
-import type { MarkdownEditorAdapter, MarkdownHighlightCode, MarkdownRenderMermaid } from './types'
+import type { MarkdownEditorAdapter, MarkdownHighlightCode, MarkdownLinkHandler, MarkdownRenderMermaid } from './types'
 
 type Profile = 'article' | 'comment'
 const props = withDefaults(defineProps<{
@@ -46,6 +46,7 @@ const props = withDefaults(defineProps<{
   adapter: MarkdownEditorAdapter
   highlightCode?: MarkdownHighlightCode
   renderMermaid?: MarkdownRenderMermaid
+  onLinkClick?: MarkdownLinkHandler
   disabled?: boolean
   placeholder?: string
   label?: string
@@ -831,6 +832,10 @@ function handlePointerDown(event: PointerEvent) {
     event.preventDefault()
     const from = Number(linkNode.dataset.sourceFrom)
     const to = Number(linkNode.dataset.sourceTo)
+    const raw = source.slice(from, to)
+    const href = raw.match(/^\[[^\]]*]\(([^)\s]+)(?:\s+["'][^"']*["'])?\)$/)?.[1]
+      || raw.match(/^!\[[^\]]*]\(([^)\s]+)/)?.[1]
+    if (href) void props.onLinkClick?.(href)
     setSelection(from + Math.max(1, Math.floor((to - from) / 2)))
     return
   }

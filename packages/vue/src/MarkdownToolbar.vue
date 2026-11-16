@@ -10,6 +10,18 @@
       >
         {{ item.label }}
       </button>
+      <input ref="fileInput" type="file" accept="image/*" multiple hidden @change="handleFiles" />
+      <button
+        v-if="uploadImages"
+        type="button"
+        title="上传图片"
+        aria-label="上传图片"
+        :disabled="uploading"
+        @mousedown.prevent
+        @click="fileInput?.click()"
+      >
+        {{ uploading ? '上传中…' : '图片' }}
+      </button>
     </div>
     <div v-if="mode === 'visual'" class="mde__toolbar" role="toolbar" aria-label="Markdown 工具">
       <button
@@ -30,17 +42,37 @@
 </template>
 
 <script setup lang="ts">
-import type { MarkdownEditorMode } from './types'
+import { ref } from 'vue'
+import type { MarkdownEditorMode, MarkdownUploadImages } from './types'
 
-defineProps<{
+const props = defineProps<{
   mode: MarkdownEditorMode
   tools: string[]
+  uploadImages?: MarkdownUploadImages
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   'set-mode': [mode: MarkdownEditorMode]
   'insert-syntax': [kind: string]
+  'insert-image': [url: string]
 }>()
+
+const fileInput = ref<HTMLInputElement>()
+const uploading = ref(false)
+
+async function handleFiles(event: Event) {
+  const input = event.target as HTMLInputElement
+  const files = Array.from(input.files || [])
+  input.value = ''
+  if (!files.length || !props.uploadImages) return
+  uploading.value = true
+  try {
+    const urls = await props.uploadImages(files)
+    urls.forEach(url => emit('insert-image', url))
+  } finally {
+    uploading.value = false
+  }
+}
 
 const modes = [
   { value: 'visual' as const, label: '编辑' },

@@ -10,6 +10,8 @@ export interface MarkdownEditorAdapter {
 
 export type MarkdownHighlightCode = (source: string, language: string) => string | undefined
 export type MarkdownRenderMermaid = (source: string) => Promise<string | { svg: string }>
+export type MarkdownUploadImages = (files: File[]) => Promise<string[]>
+export type MarkdownLinkHandler = (url: string) => void | Promise<void>
 
 export interface MarkdownEditorProps {
   modelValue: string
@@ -21,7 +23,8 @@ export interface MarkdownEditorProps {
   showSource?: boolean
   showPreview?: boolean
   toolbar?: string[]
-  uploadImages?: (files: File[]) => Promise<string[]>
+  uploadImages?: MarkdownUploadImages
+  onLinkClick?: MarkdownLinkHandler
   highlightCode?: MarkdownHighlightCode
   renderMermaid?: MarkdownRenderMermaid
 }
