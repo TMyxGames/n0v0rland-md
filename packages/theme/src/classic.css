@@ -61,8 +61,78 @@
 }
 
 .mde-classic .bd-markdown-theme h1 { text-align: left; }
+.mde-classic .bd-markdown-theme h1 > span,
+.mde-classic .bd-markdown-theme h2 > span,
+.mde-classic .bd-markdown-theme h3 > span,
+.mde-classic .bd-markdown-theme h4 > span,
+.mde-classic .bd-markdown-theme h5 > span,
+.mde-classic .bd-markdown-theme h6 > span {
+  color: inherit;
+  background: none;
+  transform: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+.mde-classic .bd-markdown-theme h1 > span::after,
+.mde-classic .bd-markdown-theme h2::after,
+.mde-classic .bd-markdown-theme h3::after,
+.mde-classic .bd-markdown-theme h4::after,
+.mde-classic .bd-markdown-theme h5::after,
+.mde-classic .bd-markdown-theme h6::after {
+  display: none;
+}
+
+.mde-classic .markdown-visual-editor h1 {
+  text-align: left;
+}
+
+.mde-classic .markdown-visual-editor h1 > .markdown-editor-heading-content,
+.mde-classic .markdown-visual-editor h1 .markdown-editor-text {
+  color: inherit;
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+.mde-classic .markdown-visual-editor h1 > .markdown-editor-heading-content::after {
+  display: none;
+}
 .mde-classic .bd-markdown-theme p { margin: .75em 0; }
 .mde-classic .bd-markdown-theme a { color: var(--color-accent); }
+.mde-classic .bd-markdown-theme strong {
+  color: inherit;
+  font-weight: 700;
+  text-shadow: none;
+}
+
+.mde-classic .bd-markdown-theme em {
+  color: inherit;
+}
+
+.mde-classic .bd-markdown-theme u {
+  text-decoration: underline;
+  text-decoration-thickness: .08em;
+  text-underline-offset: .12em;
+  background: none;
+}
+
+.mde-classic .bd-markdown-theme s,
+.mde-classic .bd-markdown-theme del {
+  text-decoration: line-through;
+  animation: none;
+}
+
+.mde-classic .bd-markdown-theme mark {
+  padding: 0 .15em;
+  color: inherit;
+  background: #fff3a3;
+}
+
+.mde-classic .bd-markdown-theme blockquote::before,
+.mde-classic .bd-markdown-theme blockquote::after,
+.mde-classic .bd-markdown-theme .markdown-alert-icon {
+  display: none;
+}
+
 .mde-classic .bd-markdown-theme blockquote {
   margin: 1em 0;
   padding: .1em 1em;
@@ -70,6 +140,26 @@
   color: var(--color-text-secondary);
   background: color-mix(in srgb, var(--color-surface-border) 18%, transparent);
   box-shadow: none;
+  transform: none;
+}
+
+.mde-classic .bd-markdown-theme blockquote:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.mde-classic .bd-markdown-theme .markdown-alert {
+  padding: .1em 1em;
+}
+
+.mde-classic .bd-markdown-theme .markdown-alert-title {
+  position: static;
+  display: block;
+  margin: 0 0 .35rem;
+  color: var(--color-text);
+  font-size: .85em;
+  font-weight: 700;
+  text-transform: capitalize;
 }
 
 .mde-classic .bd-markdown-theme pre,
@@ -86,6 +176,10 @@
   border-radius: .25rem;
   color: var(--color-text);
   background: color-mix(in srgb, var(--color-surface-border) 55%, transparent);
+}
+
+.mde-classic .bd-markdown-theme code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
 }
 
 .mde-classic .bd-markdown-theme table {
