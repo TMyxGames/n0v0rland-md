@@ -89,3 +89,12 @@ const adapter = createMarkdownItAdapter({ markdown, profile: 'article' })
 ```
 
 主站现有实现暂不修改，后续会继续迁移正式预览、图片上传、Mermaid 和业务工具栏。
+
+Vue 包已经提供独立构建产物，开发联调可以使用本地链接或打包文件：
+
+```powershell
+pnpm --filter @n0v0rland-md/vue pack
+pnpm add ../n0v0rland-md-vue-0.1.0.tgz
+```
+
+宿主只需要安装 Vue peer dependency，并按需安装 `@n0v0rland-md/core`、Markdown-it adapter、preset 和 theme。

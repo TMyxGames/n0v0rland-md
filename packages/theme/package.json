@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "private": false,
+  "files": ["src"],
   "exports": {
     ".": "./src/semantic.css",
     "./classic.css": "./src/classic.css",
