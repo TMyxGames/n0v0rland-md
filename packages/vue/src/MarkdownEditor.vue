@@ -1,7 +1,16 @@
 <template>
   <section class="mde" :class="[`mde--${profile}`, `mde--${mode}`]">
     <slot name="toolbar" :mode="mode" :tools="visibleToolbar" :set-mode="setMode" :insert-syntax="insertSyntax">
-      <MarkdownToolbar :mode="mode" :tools="visibleToolbar" :upload-images="uploadImages" @set-mode="setMode" @insert-syntax="insertSyntax" @insert-image="insertImage" />
+      <MarkdownToolbar
+        :mode="mode"
+        :tools="visibleToolbar"
+        :upload-images="uploadImages"
+        :show-source="showSource"
+        :show-preview="showPreview"
+        @set-mode="setMode"
+        @insert-syntax="insertSyntax"
+        @insert-image="insertImage"
+      />
     </slot>
 
     <slot name="input" :mode="mode">
@@ -42,6 +51,8 @@ const props = withDefaults(defineProps<{
   placeholder?: string
   maxLength?: number
   toolbar?: string[]
+  showSource?: boolean
+  showPreview?: boolean
   highlightCode?: MarkdownHighlightCode
   renderMermaid?: MarkdownRenderMermaid
   uploadImages?: MarkdownUploadImages
@@ -51,6 +62,8 @@ const props = withDefaults(defineProps<{
   disabled: false,
   placeholder: '请输入 Markdown 内容…',
   maxLength: 0,
+  showSource: true,
+  showPreview: true,
 })
 const emit = defineEmits<{
   'update:modelValue': [value: string]

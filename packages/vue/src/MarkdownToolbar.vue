@@ -2,7 +2,7 @@
   <div class="mde__toolbar-shell">
     <div class="mde__modes" role="group" aria-label="编辑模式">
       <button
-        v-for="item in modes"
+        v-for="item in visibleModes"
         :key="item.value"
         type="button"
         :class="{ 'is-active': mode === item.value }"
@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { MarkdownEditorMode, MarkdownUploadImages } from './types'
 import { toolLabels } from './toolbar-config'
 
@@ -50,6 +50,8 @@ const props = defineProps<{
   mode: MarkdownEditorMode
   tools: string[]
   uploadImages?: MarkdownUploadImages
+  showSource?: boolean
+  showPreview?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -60,6 +62,11 @@ const emit = defineEmits<{
 
 const fileInput = ref<HTMLInputElement>()
 const uploading = ref(false)
+const visibleModes = computed(() => modes.filter(item =>
+  item.value === 'visual'
+  || (item.value === 'source' && props.showSource !== false)
+  || (item.value === 'preview' && props.showPreview !== false),
+))
 
 async function handleFiles(event: Event) {
   const input = event.target as HTMLInputElement
