@@ -21,13 +21,14 @@
       :maxlength="maxLength || undefined"
       spellcheck="false"
     />
-    <div v-else class="mde__preview bd-markdown-theme" v-html="adapter.render(current)" />
+    <MarkdownPreview v-else :model-value="current" :adapter="adapter" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import MarkdownVisualEditor from './MarkdownVisualEditor.vue'
+import MarkdownPreview from './MarkdownPreview.vue'
 import type { MarkdownEditorAdapter, MarkdownEditorMode, MarkdownEditorProfile, MarkdownHighlightCode, MarkdownInputExpose, MarkdownLinkHandler, MarkdownRenderMermaid } from './types'
 
 const props = withDefaults(defineProps<{
