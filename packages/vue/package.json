@@ -1,0 +1,16 @@
+{
+  "name": "@n0v0rland-md/vue",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "peerDependencies": {
+    "vue": "^3.4.0"
+  },
+  "dependencies": {
+    "@n0v0rland-md/core": "workspace:*",
+    "@n0v0rland-md/markdown-it-adapter": "workspace:*"
+  }
+}

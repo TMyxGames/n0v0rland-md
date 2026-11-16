@@ -1,0 +1,13 @@
+{
+  "name": "n0v0rland-md",
+  "private": true,
+  "packageManager": "pnpm@12.6.0",
+  "scripts": {
+    "build": "pnpm -r build",
+    "type-check": "pnpm -r build"
+  },
+  "devDependencies": {
+    "markdown-it": "^14.1.0",
+    "typescript": "^5.9.3"
+  }
+}
