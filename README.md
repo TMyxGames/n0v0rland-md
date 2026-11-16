@@ -76,4 +76,16 @@ const adapter = createMarkdownItAdapter({ markdown, profile: 'article' })
 
 因此评论区可以把工具栏放在输入框下方，文章编辑页可以把工具栏固定在输入区上方。
 
+高亮、Mermaid 和上传等浏览器能力由宿主注入，编辑器包不绑定具体站点服务：
+
+```vue
+<MarkdownInput
+  v-model="value"
+  :mode="mode"
+  :adapter="adapter"
+  :highlight-code="highlightCode"
+  :render-mermaid="renderMermaid"
+/>
+```
+
 主站现有实现暂不修改，后续会继续迁移正式预览、图片上传、Mermaid 和业务工具栏。

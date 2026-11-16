@@ -18,12 +18,16 @@
       v-model="markdown"
       :mode="mode"
       :adapter="adapter"
+      :highlight-code="highlightCode"
+      :render-mermaid="renderMermaid"
     />
   </main>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import hljs from 'highlight.js'
+import mermaid from 'mermaid'
 import { createMarkdownItAdapter } from '@n0v0rland-md/markdown-it-adapter'
 import { createSiteMarkdown } from '@n0v0rland-md/preset'
 import { MarkdownInput, MarkdownToolbar } from '@n0v0rland-md/vue'
@@ -41,6 +45,14 @@ const adapter = createMarkdownItAdapter({
   markdown: siteMarkdown.md,
   profile: 'article',
 })
+const highlightCode = (source: string, language: string) => {
+  if (!language || !hljs.getLanguage(language)) return undefined
+  return hljs.highlight(source, { language, ignoreIllegals: true }).value
+}
+const renderMermaid = async (source: string) => {
+  mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: dark.value ? 'dark' : 'default' })
+  return (await mermaid.render(`playground-mermaid-${Date.now()}`, source)).svg
+}
 const tools = [
   'heading', 'bold', 'italic', 'underline', 'strike', 'code',
   'spoiler', 'whisper', 'loud', 'inner', 'blockquote', 'alert',

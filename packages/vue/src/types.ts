@@ -8,6 +8,9 @@ export interface MarkdownEditorAdapter {
   render(source: string, env?: Record<string, unknown>): string
 }
 
+export type MarkdownHighlightCode = (source: string, language: string) => string | undefined
+export type MarkdownRenderMermaid = (source: string) => Promise<string | { svg: string }>
+
 export interface MarkdownEditorProps {
   modelValue: string
   profile?: MarkdownEditorProfile
@@ -19,6 +22,8 @@ export interface MarkdownEditorProps {
   showPreview?: boolean
   toolbar?: string[]
   uploadImages?: (files: File[]) => Promise<string[]>
+  highlightCode?: MarkdownHighlightCode
+  renderMermaid?: MarkdownRenderMermaid
 }
 
 export interface MarkdownEditorExpose {

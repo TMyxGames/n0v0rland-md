@@ -14,6 +14,8 @@
         :disabled="disabled"
         :placeholder="placeholder"
         :max-length="maxLength"
+        :highlight-code="highlightCode"
+        :render-mermaid="renderMermaid"
       />
     </slot>
 
@@ -28,7 +30,7 @@
 import { computed, ref, watch } from 'vue'
 import MarkdownInput from './MarkdownInput.vue'
 import MarkdownToolbar from './MarkdownToolbar.vue'
-import type { MarkdownEditorExpose, MarkdownEditorMode, MarkdownEditorProfile, MarkdownEditorAdapter } from './types'
+import type { MarkdownEditorExpose, MarkdownEditorMode, MarkdownEditorProfile, MarkdownEditorAdapter, MarkdownHighlightCode, MarkdownRenderMermaid } from './types'
 
 const props = withDefaults(defineProps<{
   modelValue: string
@@ -38,6 +40,8 @@ const props = withDefaults(defineProps<{
   placeholder?: string
   maxLength?: number
   toolbar?: string[]
+  highlightCode?: MarkdownHighlightCode
+  renderMermaid?: MarkdownRenderMermaid
 }>(), {
   profile: 'article',
   disabled: false,

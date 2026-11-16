@@ -37,15 +37,15 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { MarkdownSourceDocument, domPositionFromSourceOffset, sourceOffsetFromDOM, adjacentSourceOffset, listLineBreak, quoteLineBreak, structuralPrefix } from '@n0v0rland-md/core'
-import hljs from 'highlight.js'
-import type { MarkdownEditorAdapter } from './types'
-import mermaidBundleUrl from 'mermaid/dist/mermaid.min.js?url'
+import type { MarkdownEditorAdapter, MarkdownHighlightCode, MarkdownRenderMermaid } from './types'
 
 type Profile = 'article' | 'comment'
 const props = withDefaults(defineProps<{
   modelValue: string
   profile?: Profile
   adapter: MarkdownEditorAdapter
+  highlightCode?: MarkdownHighlightCode
+  renderMermaid?: MarkdownRenderMermaid
   disabled?: boolean
   placeholder?: string
   label?: string
@@ -69,7 +69,6 @@ let mutationObserver: MutationObserver | undefined
 let lastSelection: SelectionState = { from: source.length, to: source.length, backward: false }
 let verticalColumn: number | undefined
 let syntaxRevealTimer: number | undefined
-let mermaidLoadPromise: Promise<any> | undefined
 let sourceDocumentCache: { source: string; profile: Profile; document: MarkdownSourceDocument } | undefined
 
 const inlinePattern = /(?<!\\)(!\[[^\]\n]*\]\([^) \n]+(?:\s+"[^"]*")?\)|\[[^\]\n]+\]\([^) \n]+\)|\[[^\]\n]+\]\[[^\]\n]+\]|\[\^[^\]\n]+\]|\*\*[^*\n]+\*\*|__[^_\n]+__|(?<!\*)\*[^*\n]+\*(?!\*)|(?<!_)_[^_\n]+_(?!_)|\+\+[^+\n]+\+\+|~~[^~\n]+~~|==[^=\n]+==|`[^`\n]+`|\|\|[^|\n]+\|\||::(?:whisper|loud|inner|不解析|no[ -]?parse|raw)\[[^\]\n]+\]|:[a-z][a-z0-9_+-]*:)/gi
@@ -381,27 +380,12 @@ function sourceDocumentFor(value: string) {
   return document
 }
 
-function loadMermaid() {
-  if ((globalThis as any).mermaid) return Promise.resolve((globalThis as any).mermaid)
-  if (mermaidLoadPromise) return mermaidLoadPromise
-  mermaidLoadPromise = new Promise((resolve, reject) => {
-    const script = document.createElement('script')
-    script.src = mermaidBundleUrl
-    script.dataset.markdownVisualEditorMermaid = 'true'
-    script.onload = () => (globalThis as any).mermaid ? resolve((globalThis as any).mermaid) : reject(new Error('Mermaid API unavailable'))
-    script.onerror = () => reject(new Error('Mermaid bundle failed to load'))
-    document.head.append(script)
-  }).catch(error => { mermaidLoadPromise = undefined; throw error })
-  return mermaidLoadPromise
-}
-
 async function enhanceMermaidBlocks() {
   if (!root.value || focused.value) return
   const blocks = [...root.value.querySelectorAll<HTMLElement>('.markdown-editor-mermaid')]
   if (!blocks.length) return
+  if (!props.renderMermaid) return
   try {
-    const mermaid = await loadMermaid()
-    mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: document.documentElement.getAttribute('data-color-mode') === 'dark' ? 'dark' : 'default' })
     for (const block of blocks) {
       if (block.querySelector('.markdown-editor-mermaid-preview')) continue
       const source = block.dataset.mermaidSource || ''
@@ -410,10 +394,11 @@ async function enhanceMermaidBlocks() {
       preview.contentEditable = 'false'
       preview.setAttribute('aria-hidden', 'true')
       try {
-        const rendered = await mermaid.render(`markdown-editor-mermaid-${Math.random().toString(36).slice(2)}`, source)
+        const rendered = await props.renderMermaid(source)
+        const svg = typeof rendered === 'string' ? rendered : rendered.svg
         const image = document.createElement('img')
         image.alt = 'Mermaid 图表预览'
-        image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(rendered.svg)}`
+        image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
         preview.append(image)
       } catch {
         preview.classList.add('is-error')
@@ -421,16 +406,12 @@ async function enhanceMermaidBlocks() {
       }
       block.prepend(preview)
     }
-  } catch {
-    blocks.forEach(block => block.classList.add('mermaid-render-error'))
-  }
+  } catch { blocks.forEach(block => block.classList.add('mermaid-render-error')) }
 }
 
 function highlightedText(text: string, from: number, language: string) {
   const element = document.createElement('span')
-  if (language && hljs.getLanguage(language)) {
-    try { element.innerHTML = hljs.highlight(text, { language, ignoreIllegals: true }).value } catch { /* plain source below */ }
-  }
+  try { element.innerHTML = props.highlightCode?.(text, language) || '' } catch { /* plain source below */ }
   // Highlight output is accepted only if it preserves every source character.
   if (element.textContent !== text) element.textContent = text
   const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT)
