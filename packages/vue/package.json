@@ -10,7 +10,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "vue-tsc -p tsconfig.json --noEmit"
   },
   "peerDependencies": {
     "vue": "^3.4.0"
@@ -20,9 +20,5 @@
     "@n0v0rland-md/markdown-it-adapter": "workspace:*",
     "highlight.js": "^11.11.1",
     "mermaid": "^11.16.0"
-  },
-  "dependencies": {
-    "@n0v0rland-md/core": "workspace:*",
-    "@n0v0rland-md/markdown-it-adapter": "workspace:*"
   }
 }

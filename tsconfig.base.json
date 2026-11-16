@@ -3,12 +3,6 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "baseUrl": ".",
-    "paths": {
-      "@n0v0rland-md/core": ["packages/core/src/index.ts"],
-      "@n0v0rland-md/markdown-it-adapter": ["packages/markdown-it-adapter/src/index.ts"],
-      "@n0v0rland-md/vue": ["packages/vue/src/index.ts"]
-    },
     "strict": true,
     "skipLibCheck": true,
     "esModuleInterop": true,

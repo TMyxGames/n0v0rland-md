@@ -1,17 +1,17 @@
 {
   "name": "n0v0rland-md",
   "private": true,
-  "packageManager": "pnpm@12.6.0",
   "scripts": {
     "build": "pnpm -r build",
     "type-check": "pnpm -r build",
-    "dev": "pnpm --filter @n0v0rland-md/playground dev"
+    "dev": "vite --config examples/vue-vite/vite.config.ts --host"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",
     "markdown-it": "^14.1.0",
     "typescript": "^5.9.3",
     "vite": "^5.4.0",
-    "vue": "^3.5.0"
+    "vue": "^3.5.0",
+    "vue-tsc": "^3.1.5"
   }
 }
