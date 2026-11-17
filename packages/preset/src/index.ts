@@ -11,11 +11,13 @@ import { full as emoji } from 'markdown-it-emoji'; // 表情
 import markdownItTaskLists from 'markdown-it-task-lists'; // 任务列表
 import markdownItFootnote from 'markdown-it-footnote';
 import container from 'markdown-it-container'; // 自定义容器
+import type { MarkdownSyntaxDefinition } from '@n0v0rland-md/core';
 
 
 export interface MarkdownPresetOptions {
     siteOrigin?: string;
     configure?: (markdown: MarkdownIt, commentMarkdown: MarkdownIt) => void;
+    syntax?: MarkdownSyntaxDefinition[];
 }
 
 export function createSiteMarkdown(options: MarkdownPresetOptions = {}) {
@@ -572,10 +574,13 @@ const renderCommentMarkdown = value => {
 };
 
 options.configure?.(md, commentMd);
-return { md, commentMd, renderCommentMarkdown };
+return { md, commentMd, renderCommentMarkdown, syntax: options.syntax || [] };
 }
 
 export function createMarkdownItPreset(options: MarkdownPresetOptions = {}) {
-    return createSiteMarkdown(options).md;
+    const md = new MarkdownIt({ html: false, linkify: true, typographer: false });
+    md.use(mark).use(ins).use(emoji).use(markdownItTaskLists).use(markdownItFootnote);
+    options.configure?.(md, md);
+    return md;
 }
 

@@ -4,9 +4,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
+    "type-check": "vue-tsc -p tsconfig.json",
     "build": "vite build"
   },
   "dependencies": {
+    "@n0v0rland-md/core": "workspace:*",
     "@n0v0rland-md/markdown-it-adapter": "workspace:*",
     "@n0v0rland-md/preset": "workspace:*",
     "@n0v0rland-md/theme": "workspace:*",
@@ -14,7 +16,15 @@
     "highlight.js": "^11.11.1",
     "markdown-it": "^14.1.0",
     "mermaid": "^11.16.0",
-    "vue": "^3.5.0"
+    "vue": "^3.5.0",
+    "markdown-it-anchor": "^9.2.0",
+    "markdown-it-container": "^4.0.0",
+    "markdown-it-emoji": "^3.0.0",
+    "markdown-it-footnote": "^4.0.0",
+    "markdown-it-ins": "^4.0.0",
+    "markdown-it-mark": "^4.0.0",
+    "markdown-it-task-lists": "^2.1.1",
+    "markdown-it-toc-done-right": "^4.2.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",

@@ -1,0 +1,102 @@
+/* Host-owned theme: injected by theme-config.ts, scoped to the selected root.
+   Classic supplies structural defaults; this stylesheet changes typography and
+   semantic surfaces in both the editor and preview. */
+.mde-classic.mde-notebook {
+  --mde-font-family: "Iowan Old Style", "Palatino Linotype", "Noto Serif SC", "Songti SC", SimSun, serif;
+  --color-page: #eee8de;
+  --color-surface: #fffaf0;
+  --color-surface-border: #d6c9b6;
+  --color-text: #40362b;
+  --color-text-secondary: #776855;
+  --color-text-muted: #8b7a67;
+  --color-accent: #9d5135;
+  --color-accent-soft: #f3e3d5;
+  --color-accent-muted: #dfb69d;
+  --color-markdown-syntax: #4f7958;
+  --mde-surface: var(--color-surface);
+  --mde-border: var(--color-surface-border);
+  --notebook-highlight: #f2dfaa;
+}
+
+.mde-classic.mde-notebook[data-color-mode="dark"] {
+  --color-page: #201d19;
+  --color-surface: #2b2721;
+  --color-surface-border: #514738;
+  --color-text: #e8ddca;
+  --color-text-secondary: #c3b297;
+  --color-text-muted: #ad9a7f;
+  --color-accent: #e5ab86;
+  --color-accent-soft: #453329;
+  --color-accent-muted: #73523c;
+  --color-markdown-syntax: #9fc599;
+  --notebook-highlight: #665323;
+}
+
+.mde-classic.mde-notebook .bd-markdown-theme {
+  --md-font-body: 1.08rem;
+  --md-font-h1: 2.2rem;
+  --md-font-h2: 1.65rem;
+  --md-font-h3: 1.35rem;
+  font-family: var(--mde-font-family);
+  font-size: var(--md-font-body);
+  line-height: 1.9;
+  letter-spacing: .025em;
+}
+
+.mde-classic.mde-notebook .bd-markdown-theme :is(h1, h2, h3, h4, h5, h6) {
+  display: block;
+  text-align: left;
+  color: var(--color-accent);
+  line-height: 1.45;
+  font-weight: 700;
+}
+
+.mde-classic.mde-notebook .bd-markdown-theme h1 {
+  padding-bottom: .4em;
+  border-bottom: 2px solid var(--color-surface-border);
+}
+
+.mde-classic.mde-notebook .bd-markdown-theme h2 {
+  padding-left: .65em;
+  border-left: 3px solid var(--color-accent);
+}
+
+.mde-classic.mde-notebook .bd-markdown-theme blockquote {
+  border: 0;
+  border-left: 3px solid var(--color-accent-muted);
+  border-radius: 0;
+  padding: .25em 1.25em;
+  background: var(--color-accent-soft);
+  font-style: italic;
+}
+
+.mde-classic.mde-notebook .bd-markdown-theme mark {
+  color: var(--color-text);
+  background: var(--notebook-highlight);
+}
+
+.mde-classic.mde-notebook .bd-markdown-theme :not(pre) > code {
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.mde-classic.mde-notebook .bd-markdown-theme :is(pre, .bd-code-block) {
+  border-color: var(--color-surface-border);
+  background: var(--color-page);
+  border-radius: .25rem;
+}
+
+.mde-classic.mde-notebook .bd-markdown-theme a {
+  color: var(--color-accent);
+  text-underline-offset: .2em;
+}
+
+.mde-classic.mde-notebook .bd-markdown-theme hr {
+  border: 0;
+  border-top: 1px dashed var(--color-surface-border);
+}
+
+.mde-classic.mde-notebook .bd-markdown-theme th {
+  background: var(--color-accent-soft);
+  color: var(--color-text);
+}

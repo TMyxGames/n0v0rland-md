@@ -5,17 +5,23 @@ export interface MarkdownSourceBlock {
   raw: boolean
   type?: string
   fallbackReason?: string
+  /** Original parser tokens; never retokenize these with a different dialect. */
+  tokens: readonly MarkdownSourceToken[]
 }
 
-type BlockToken = {
+export type MarkdownSourceToken = {
   type: string
   nesting: number
   map?: [number, number]
   markup?: string
+  tag?: string
+  content?: string
+  children?: MarkdownSourceToken[]
+  attrs?: [string, string][] | null
   meta?: { label?: string }
 }
 export interface MarkdownBlockParser {
-  parse(source: string, env: Record<string, any>): BlockToken[]
+  parse(source: string, env: Record<string, any>): MarkdownSourceToken[]
 }
 
 const rawTokenTypes = /^(html_block|footnote_block_open|no_parse_block)$/
@@ -32,10 +38,25 @@ const fallbackLabels: Record<string, string> = {
 export class MarkdownSourceDocument {
   readonly source: string
   readonly blocks: MarkdownSourceBlock[]
+  readonly env: Record<string, any> = {}
+  tokens: readonly MarkdownSourceToken[] = []
 
   constructor(source: string, private readonly parser: MarkdownBlockParser) {
     this.source = source
     this.blocks = this.parseBlocks(source)
+  }
+
+  /** Find the source block without a whole-document linear search. */
+  blockAt(offset: number): MarkdownSourceBlock | undefined {
+    let low = 0
+    let high = this.blocks.length - 1
+    while (low <= high) {
+      const middle = (low + high) >>> 1
+      const block = this.blocks[middle]
+      if (offset < block.from) high = middle - 1
+      else if (offset > block.to) low = middle + 1
+      else return block
+    }
   }
 
   private parseBlocks(source: string): MarkdownSourceBlock[] {
@@ -44,10 +65,10 @@ export class MarkdownSourceDocument {
     for (const match of source.matchAll(/\n/g)) offsets.push(match.index! + 1)
     offsets.push(source.length)
     try {
-      const env: Record<string, any> = {}
-      const tokens = this.parser.parse(source, env)
+      const tokens = this.parser.parse(source, this.env)
+      this.tokens = tokens
       const result: MarkdownSourceBlock[] = []
-      const addBlock = (map: [number, number], type: string, forceRaw = false, markup?: string) => {
+      const addBlock = (map: [number, number], type: string, forceRaw = false, markup?: string, blockTokens: MarkdownSourceToken[] = []) => {
         if (!map.every(Number.isInteger) || map[0] < 0 || map[1] < map[0] || map[1] >= offsets.length) {
           throw new Error('Unreliable Markdown block source range')
         }
@@ -64,7 +85,7 @@ export class MarkdownSourceDocument {
         const raw = forceRaw || rawTokenTypes.test(type) ||
           !/^(paragraph_open|heading_open|blockquote_open|bullet_list_open|ordered_list_open|fence|code_block|hr|table_open|container_dropcap(?:_legacy)?_open)$/.test(type)
         result.push({
-          text, from, to: from + text.length, raw, type,
+          text, from, to: from + text.length, raw, type, tokens: blockTokens,
           ...(raw ? { fallbackReason: fallbackLabels[type] || '复杂结构' } : {}),
         })
       }
@@ -72,7 +93,8 @@ export class MarkdownSourceDocument {
       let footnoteMap: [number, number] | undefined
       let footnoteLabel: string | undefined
       let inFootnotes = false
-      for (const token of tokens) {
+      for (let tokenIndex = 0; tokenIndex < tokens.length; tokenIndex++) {
+        const token = tokens[tokenIndex]
         // The footnote plugin moves definitions into a generated tail. It is
         // not a source container; collect each original definition separately,
         // then sort by source order rather than treating the whole document raw.
@@ -96,7 +118,12 @@ export class MarkdownSourceDocument {
         }
         const standalone = token.nesting === 0 && standaloneTokenTypes.test(token.type)
         if (token.map && depth === 0 && (token.nesting === 1 || standalone || token.nesting === 0)) {
-          addBlock(token.map, token.type, false, token.markup)
+          let endIndex = tokenIndex + 1
+          if (token.nesting === 1) {
+            let nested = 1
+            while (endIndex < tokens.length && nested) nested += tokens[endIndex++].nesting
+          }
+          addBlock(token.map, token.type, false, token.markup, tokens.slice(tokenIndex, endIndex))
         }
         if (token.nesting === 1) depth += 1
         else if (token.nesting === -1) depth = Math.max(0, depth - 1)
@@ -114,7 +141,7 @@ export class MarkdownSourceDocument {
         const start = from + gap.lastIndexOf('\n', first) + 1
         const end = from + gap.trimEnd().length
         blocks.push({
-          from: start, to: end, text: source.slice(start, end), raw: true,
+          from: start, to: end, text: source.slice(start, end), raw: true, tokens: [],
           type: 'source_definition', fallbackReason: '定义或未映射语法',
         })
       }
@@ -150,7 +177,7 @@ export class MarkdownSourceDocument {
     let text = ''
     let from = 0
     const flush = () => {
-      if (text) result.push({ text, from, to: from + text.length, raw: true })
+      if (text) result.push({ text, from, to: from + text.length, raw: true, tokens: [] })
       text = ''
     }
     for (const line of lines) {

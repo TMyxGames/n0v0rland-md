@@ -17,5 +17,8 @@
   },
   "peerDependencies": {
     "markdown-it": "^14.0.0"
+  },
+  "dependencies": {
+    "@n0v0rland-md/core": "workspace:*"
   }
 }

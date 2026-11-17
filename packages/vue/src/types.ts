@@ -1,10 +1,14 @@
+import type { MarkdownSyntaxRegistry } from '@n0v0rland-md/core'
+
 export type MarkdownEditorMode = 'visual' | 'source' | 'preview'
 export type MarkdownEditorProfile = 'article' | 'comment'
+export type MarkdownEditingStyle = 'always' | 'blur-hidden' | 'structure'
 
 export interface MarkdownEditorAdapter {
   profile: MarkdownEditorProfile
   markdown: any
   parser: any
+  syntax?: MarkdownSyntaxRegistry
   render(source: string, env?: Record<string, unknown>): string
 }
 
@@ -25,6 +29,7 @@ export interface MarkdownEditorProps {
   toolbar?: string[]
   uploadImages?: MarkdownUploadImages
   onLinkClick?: MarkdownLinkHandler
+  editingStyle?: MarkdownEditingStyle
   highlightCode?: MarkdownHighlightCode
   renderMermaid?: MarkdownRenderMermaid
 }
@@ -34,10 +39,12 @@ export interface MarkdownEditorExpose {
   sync(): string
   insertSyntax(kind: string): void
   setMode(mode: MarkdownEditorMode): void
+  insertTable(rows?: number, columns?: number): void
 }
 
 export interface MarkdownInputExpose {
   focus(): void
   sync(): string
   insertSyntax(before: string, after?: string): void
+  insertTable(rows?: number, columns?: number): void
 }

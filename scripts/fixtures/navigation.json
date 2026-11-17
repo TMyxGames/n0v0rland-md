@@ -1,0 +1,6 @@
+{
+  "list": "- alpha\n- **bold line**\n- ++underlined line++",
+  "tasks": "- [ ] first task\n- [x] done task",
+  "paragraphs": "first paragraph\n\n\nsecond paragraph",
+  "hiddenSyntax": "before **bold** and ++underlined++ after"
+}

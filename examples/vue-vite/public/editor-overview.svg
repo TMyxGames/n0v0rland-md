@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 220" role="img" aria-label="Markdown 原文连接可视化编辑和正式预览">
+  <rect width="840" height="220" rx="16" fill="#f6f8fa"/>
+  <g fill="#fff" stroke="#d0d7de" stroke-width="2">
+    <rect x="36" y="52" width="220" height="116" rx="12"/>
+    <rect x="310" y="52" width="220" height="116" rx="12"/>
+    <rect x="584" y="52" width="220" height="116" rx="12"/>
+  </g>
+  <g fill="#0969da" font-family="system-ui,sans-serif" font-size="22" text-anchor="middle">
+    <text x="146" y="103">Markdown</text><text x="420" y="103">可视化编辑</text><text x="694" y="103">正式预览</text>
+  </g>
+  <g fill="#57606a" font-family="system-ui,sans-serif" font-size="16" text-anchor="middle">
+    <text x="146" y="133">保留原文</text><text x="420" y="133">直接书写</text><text x="694" y="133">共享渲染配置</text>
+  </g>
+  <path d="M266 110h34m-8-8 8 8-8 8m248-8h34m-8-8 8 8-8 8" fill="none" stroke="#0969da" stroke-width="2"/>
+</svg>

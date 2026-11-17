@@ -1,15 +1,18 @@
 <template>
   <section class="mde" :class="[`mde--${profile}`, `mde--${mode}`]">
-    <slot name="toolbar" :mode="mode" :tools="visibleToolbar" :set-mode="setMode" :insert-syntax="insertSyntax">
+    <slot name="toolbar" :mode="mode" :tools="visibleToolbar" :set-mode="setMode" :insert-syntax="insertSyntax" :insert-table="insertTable">
       <MarkdownToolbar
         :mode="mode"
         :tools="visibleToolbar"
         :upload-images="uploadImages"
         :show-source="showSource"
         :show-preview="showPreview"
+        :labels="toolbarLabels"
+        :disabled="disabled"
         @set-mode="setMode"
         @insert-syntax="insertSyntax"
         @insert-image="insertImage"
+        @insert-table="insertTable"
       />
     </slot>
 
@@ -26,6 +29,7 @@
         :highlight-code="highlightCode"
         :render-mermaid="renderMermaid"
         :on-link-click="onLinkClick"
+        :editing-style="editingStyle"
       />
     </slot>
 
@@ -41,7 +45,7 @@ import { computed, ref, watch } from 'vue'
 import MarkdownInput from './MarkdownInput.vue'
 import MarkdownToolbar from './MarkdownToolbar.vue'
 import { defaultToolbars, syntaxPairs } from './toolbar-config'
-import type { MarkdownEditorExpose, MarkdownEditorMode, MarkdownEditorProfile, MarkdownEditorAdapter, MarkdownHighlightCode, MarkdownLinkHandler, MarkdownRenderMermaid, MarkdownUploadImages } from './types'
+import type { MarkdownEditorExpose, MarkdownEditorMode, MarkdownEditorProfile, MarkdownEditorAdapter, MarkdownEditingStyle, MarkdownHighlightCode, MarkdownLinkHandler, MarkdownRenderMermaid, MarkdownUploadImages } from './types'
 
 const props = withDefaults(defineProps<{
   modelValue: string
@@ -57,6 +61,7 @@ const props = withDefaults(defineProps<{
   renderMermaid?: MarkdownRenderMermaid
   uploadImages?: MarkdownUploadImages
   onLinkClick?: MarkdownLinkHandler
+  editingStyle?: MarkdownEditingStyle
 }>(), {
   profile: 'article',
   disabled: false,
@@ -73,14 +78,23 @@ const emit = defineEmits<{
 const current = ref(props.modelValue)
 const mode = ref<MarkdownEditorMode>('visual')
 const input = ref<InstanceType<typeof MarkdownInput> | null>(null)
-const visibleToolbar = computed(() => props.toolbar || defaultToolbars[props.profile])
+const visibleToolbar = computed(() => {
+  if (props.toolbar) return props.toolbar
+  const custom = props.adapter.syntax?.toolbar(props.profile).map(item => item.kind || item.before) || []
+  return [...defaultToolbars[props.profile], ...custom]
+})
+const toolbarLabels = computed(() => Object.fromEntries(
+  (props.adapter.syntax?.toolbar(props.profile) || [])
+    .filter(item => item.kind)
+    .map(item => [item.kind, item.label]),
+))
 
 watch(() => props.modelValue, value => {
   if (value !== current.value) current.value = value
 })
-watch(current, value => {
-  emit('update:modelValue', value)
-  emit('validity', !props.maxLength || value.length <= props.maxLength)
+watch(current, value => emit('update:modelValue', value))
+watch([current, () => props.maxLength], ([value, maxLength]) => {
+  emit('validity', !maxLength || value.length <= maxLength)
 }, { immediate: true })
 watch([() => props.showSource, () => props.showPreview], () => {
   if (mode.value === 'source' && props.showSource === false) mode.value = 'visual'
@@ -94,25 +108,34 @@ function setMode(value: MarkdownEditorMode) {
 }
 
 function insertSyntax(kind: string) {
-  const [before, after] = syntaxPairs[kind] || [kind, '']
+  if (kind === 'table') { insertTable(); return }
+  const definition = props.adapter.syntax?.resolve(kind)
+  const pair = definition?.toolbar
+    ? [definition.toolbar.before, definition.toolbar.after || ''] as [string, string]
+    : syntaxPairs[kind] || [kind, ''] as [string, string]
+  const [before, after] = pair
   input.value?.insertSyntax(before, after)
 }
 
 function insertImage(url: string) {
   input.value?.insertSyntax(`![图片](${url})`, '')
 }
+function insertTable(rows = 3, columns = 3) {
+  input.value?.insertTable(rows, columns)
+}
 
 defineExpose<MarkdownEditorExpose>({
   focus: () => input.value?.focus(),
-  sync: () => input.value?.sync() || current.value,
+  sync: () => input.value?.sync() ?? current.value,
   insertSyntax,
   setMode,
+  insertTable,
 })
 </script>
 
 <style>
 .mde {
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid var(--mde-border, var(--color-surface-border, #d8d8d8));
   border-radius: .5rem;
   background: var(--mde-surface, var(--color-surface, #fff));

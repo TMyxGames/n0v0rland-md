@@ -11,17 +11,18 @@ export function quoteLineBreak(source: string, offset: number, inQuote: boolean)
   return `\n${prefix || ''}`
 }
 
-export function listLineBreak(source: string, offset: number, ordered: boolean) {
+export function listLineBreak(source: string, offset: number, ordered?: boolean) {
   const start = source.lastIndexOf('\n', Math.max(0, offset - 1)) + 1
   const line = source.slice(start, offset)
-  const match = line.match(/^([ \t]*)([-+*]|\d+[.)])([ \t]+)(.*)$/)
+  const match = line.match(/^([ \t]*)([-+*]|\d+[.)])([ \t]+)(?:\[([ xX])\][ \t]+)?(.*)$/)
   if (!match) return '\n'
-  if (!match[4].trim()) return '\n'
+  if (!match[5].trim()) return '\n'
   const indent = match[1]
-  const marker = ordered
+  const marker = (ordered ?? /^\d/.test(match[2]))
     ? `${Math.max(1, Number.parseInt(match[2], 10) + 1)}. `
     : `${match[2]} `
-  return `\n${indent}${marker}`
+  const task = match[4] === undefined ? '' : '[ ] '
+  return `\n${indent}${marker}${task}`
 }
 
 export function structuralPrefix(source: string, offset: number, kind: 'quote' | 'list') {
@@ -29,7 +30,7 @@ export function structuralPrefix(source: string, offset: number, kind: 'quote' |
   const line = source.slice(start, offset)
   const pattern = kind === 'quote'
     ? /^([ \t]{0,3}(?:>[ \t]?)+)$/
-    : /^([ \t]*(?:[-+*]|\d+[.)])[ \t]+)$/
+    : /^([ \t]*(?:[-+*]|\d+[.)])[ \t]+(?:\[[ xX]\][ \t]+)?)$/
   const match = line.match(pattern)
   if (!match) return undefined
   return { from: start, to: start + match[1].length, text: match[1] }

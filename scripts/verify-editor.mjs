@@ -1,11 +1,15 @@
 import assert from 'node:assert/strict'
 import { existsSync } from 'node:fs'
 import { createMarkdownItAdapter } from '../packages/markdown-it-adapter/dist/index.js'
-import { createMarkdownItPreset } from '../packages/preset/dist/index.js'
+import { createMarkdownItPreset, createSiteMarkdown } from '../packages/preset/dist/index.js'
 import { MarkdownSourceDocument } from '../packages/core/dist/index.js'
 
 const markdown = createMarkdownItPreset({ siteOrigin: 'https://example.com' })
-const adapter = createMarkdownItAdapter({ markdown, profile: 'article' })
+const conventional = markdown.render('::loud[大声] ::whisper[小声] ::inner[内心]')
+assert.doesNotMatch(conventional, /bd-markdown-(loud|whisper|inner)/)
+assert.match(conventional, /::loud\[大声\]/)
+const legacy = createSiteMarkdown().md
+const adapter = createMarkdownItAdapter({ markdown: legacy, profile: 'article' })
 const source = '# 标题\n\n**粗体**、::loud[大声]\n\n> [!tip] 提示'
 const html = adapter.render(source)
 

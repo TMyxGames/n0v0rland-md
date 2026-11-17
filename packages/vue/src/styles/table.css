@@ -1,0 +1,74 @@
+.markdown-visual-surface { position: relative; min-width: 0; }
+/* Presentation belongs to the injected Markdown theme. Only affordances live here. */
+.markdown-editor-table { max-width: 100%; overflow-x: auto; white-space: normal; overflow-wrap: normal; }
+.markdown-editor-table :is(td, th) { cursor: text; }
+/* Match the caret line in empty editable cells without changing Markdown. */
+.bd-markdown-theme :is(td, th):empty::before { content: "\00a0"; }
+.markdown-editor-table :is(td, th):hover { outline: 1px solid var(--color-accent, #0969da); outline-offset: -1px; }
+.markdown-table-ui { position: absolute; inset: 0; z-index: 8; pointer-events: none; }
+.markdown-table-ui > * { pointer-events: auto; }
+.markdown-table-controls, .markdown-table-source {
+  position: absolute; box-sizing: border-box;
+  width: max-content;
+  border: 1px solid var(--mde-border, var(--color-surface-border, #d0d7de));
+  border-radius: .5rem; padding: 5px;
+  color: var(--color-text, #24292f); background: var(--color-surface, #fff);
+  box-shadow: 0 .3rem 1rem #0002; font: .8rem/1.5 system-ui, sans-serif;
+}
+.markdown-table-controls { display: flex; align-items: center; gap: 2px; }
+.markdown-table-controls--row { flex-direction: column; }
+.markdown-table-controls__divider { width: 1px; height: 1.2rem; margin: 0 3px; background: var(--color-surface-border, #d0d7de); }
+.markdown-table-ui .markdown-table-controls button {
+  display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  width: 32px; height: 32px; min-height: 0; padding: 0;
+  border: 0; border-radius: .3rem; background: transparent; color: inherit; cursor: pointer;
+}
+.markdown-table-ui button:hover:not(:disabled), .markdown-table-ui button[aria-pressed="true"] { background: var(--color-accent-soft, #ddf4ff); color: var(--color-accent, #0969da); }
+.markdown-table-ui .markdown-table-controls button.is-danger { color: var(--color-danger, #cf222e); }
+.markdown-table-ui .markdown-table-controls button.is-danger:hover:not(:disabled) {
+  color: var(--color-danger, #cf222e);
+  background: color-mix(in srgb, var(--color-danger, #cf222e) 12%, transparent);
+}
+.markdown-table-ui button:disabled { opacity: .4; cursor: not-allowed; }
+.markdown-table-ui :is(button, textarea):focus-visible,
+.markdown-table-picker :is(button, input):focus-visible { outline: 2px solid var(--color-accent, #0969da); outline-offset: 2px; }
+.markdown-table-source { width: min(32rem, 100%); padding: .75rem; }
+.markdown-table-controls__source label { display: block; }
+.markdown-table-controls__source button { border: 1px solid var(--color-surface-border, #d0d7de); border-radius: .3rem; padding: .3rem .6rem; margin-right: .4rem; background: var(--color-surface, #fff); color: inherit; cursor: pointer; }
+.markdown-table-controls__source textarea {
+  box-sizing: border-box; display: block; width: 100%; min-width: 0; min-height: 10rem; margin: .25rem 0 .5rem;
+  padding: .5rem; resize: vertical; border: 1px solid var(--color-surface-border, #d0d7de); border-radius: .3rem;
+  font: .85rem/1.7 ui-monospace, Consolas, monospace; color: inherit; background: var(--color-page, #f6f8fa);
+}
+.markdown-table-controls__source p, .markdown-table-picker p { color: var(--color-danger, #b42318); }
+.mde__toolbar-shell { position: relative; }
+.markdown-table-picker {
+  position: absolute; right: 0; top: calc(100% + .5rem); z-index: 20;
+  width: min(18rem, calc(100vw - 2rem)); max-width: 100%;
+  padding: .85rem; border: 1px solid var(--color-surface-border, #d0d7de); border-radius: .6rem;
+  background: var(--color-surface, #fff); color: var(--color-text, #24292f);
+  font: .85rem/1.5 system-ui, sans-serif; box-shadow: 0 .3rem 1rem #0002;
+}
+.markdown-table-picker__hint { display: block; margin: .3rem 0 .6rem; color: var(--color-text-secondary, #57606a); }
+.markdown-table-picker__grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: .25rem; }
+.markdown-table-picker .markdown-table-picker__grid button {
+  display: block; width: 100%; min-width: 0; min-height: 1.5rem; padding: 0; height: 1.5rem;
+  border: 1px solid var(--color-surface-border, #d0d7de); border-radius: .15rem;
+  background: var(--color-page, #f6f8fa);
+}
+.markdown-table-picker .markdown-table-picker__grid button.is-selected { background: var(--color-accent-soft, #ddf4ff); border-color: var(--color-accent, #0969da); }
+.markdown-table-picker__dimensions { display: flex; gap: .75rem; margin: .7rem 0; }
+.markdown-table-picker__dimensions label { flex: 1; min-width: 0; }
+.markdown-table-picker input {
+  display: block; width: 100%; min-width: 0; padding: .4rem; border: 1px solid var(--color-surface-border, #d0d7de);
+  border-radius: .3rem; color: inherit; background: var(--color-page, #f6f8fa); font: inherit;
+}
+.markdown-table-picker__actions { display: flex; justify-content: flex-end; gap: .35rem; }
+.markdown-table-popover-enter-active, .markdown-table-popover-leave-active { transition: opacity .2s ease, transform .2s ease; }
+.markdown-table-popover-enter-from, .markdown-table-popover-leave-to { opacity: 0; transform: translateY(-.25rem); }
+@media (max-width: 768px) {
+  .markdown-table-ui .markdown-table-controls button { width: 36px; height: 36px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .markdown-table-popover-enter-active, .markdown-table-popover-leave-active { transition: none; }
+}

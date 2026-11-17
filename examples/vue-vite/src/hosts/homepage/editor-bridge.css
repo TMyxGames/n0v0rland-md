@@ -1,0 +1,18 @@
+/* Editor-only variables and motion guards. The host presentation itself is
+   copied verbatim and scoped by sync-homepage-example.mjs. */
+.mde-homepage {
+  --color-markdown-syntax: #3b7d50;
+  --mde-surface: var(--color-surface);
+  --mde-border: var(--color-surface-border);
+}
+.mde-homepage[data-color-mode="dark"] {
+  --color-markdown-syntax: #8bc69a;
+}
+.mde-homepage .bd-markdown-theme.markdown-visual-editor blockquote:hover,
+.mde-homepage .bd-markdown-theme.markdown-visual-editor :is(h1, h2, h3, h4, h5, h6) > span:hover {
+  transform: none;
+}
+.mde-homepage .bd-markdown-theme.markdown-visual-editor :is(s, del):hover,
+.mde-homepage .bd-markdown-theme.markdown-visual-editor .bd-markdown-inner-thought {
+  animation: none;
+}

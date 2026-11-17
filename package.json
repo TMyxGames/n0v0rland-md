@@ -4,12 +4,20 @@
   "scripts": {
     "build": "pnpm -r build",
     "type-check": "pnpm -r build",
-    "verify": "pnpm run build && node scripts/verify-editor.mjs",
-    "dev": "vite --config examples/vue-vite/vite.config.ts --host"
+    "verify": "pnpm run build && node scripts/verify-editor.mjs && node scripts/verify-source-document.mjs && node scripts/verify-syntax-config.mjs && node scripts/verify-table.mjs",
+    "verify:browser": "node scripts/verify-browser.mjs",
+    "verify:caret-browser": "node scripts/verify-caret-mapping-browser.mjs",
+    "verify:navigation-browser": "node scripts/verify-navigation-browser.mjs",
+    "verify:syntax-layout-browser": "node scripts/verify-syntax-layout-browser.mjs",
+    "verify:integration-browser": "node scripts/verify-editor-integration-browser.mjs",
+    "verify:table-browser": "node scripts/verify-table-browser.mjs",
+    "dev": "vite --config examples/vue-vite/vite.config.ts --host",
+    "sync:homepage": "node scripts/sync-homepage-example.mjs"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",
     "markdown-it": "^14.1.0",
+    "playwright": "1.62.1",
     "typescript": "^5.9.3",
     "vite": "^5.4.0",
     "vue": "^3.5.0",
