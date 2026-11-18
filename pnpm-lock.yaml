@@ -107,6 +107,9 @@ importers:
       '@n0v0rland-md/core':
         specifier: workspace:*
         version: link:../core
+      '@n0v0rland-md/markdown-it-adapter':
+        specifier: workspace:*
+        version: link:../markdown-it-adapter
       highlight.js:
         specifier: ^11.11.1
         version: 11.12.0

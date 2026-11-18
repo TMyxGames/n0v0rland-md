@@ -30,6 +30,12 @@
         :render-mermaid="renderMermaid"
         :on-link-click="onLinkClick"
         :editing-style="editingStyle"
+        :editing-effects="editingEffects"
+        :syntax-editing="syntaxEditing"
+        @focus="emit('focus', $event)"
+        @blur="emit('blur', $event)"
+        @state-change="emit('state-change', $event)"
+        @syntax-state-change="emit('syntax-state-change', $event)"
       />
     </slot>
 
@@ -45,7 +51,7 @@ import { computed, ref, watch } from 'vue'
 import MarkdownInput from './MarkdownInput.vue'
 import MarkdownToolbar from './MarkdownToolbar.vue'
 import { defaultToolbars, syntaxPairs } from './toolbar-config'
-import type { MarkdownEditorExpose, MarkdownEditorMode, MarkdownEditorProfile, MarkdownEditorAdapter, MarkdownEditingStyle, MarkdownHighlightCode, MarkdownLinkHandler, MarkdownRenderMermaid, MarkdownUploadImages } from './types'
+import type { MarkdownEditorExpose, MarkdownEditorMode, MarkdownEditorProfile, MarkdownEditorAdapter, MarkdownEditingStyle, MarkdownEditingEffects, MarkdownHighlightCode, MarkdownLinkHandler, MarkdownRenderMermaid, MarkdownUploadImages, MarkdownInputState, MarkdownSyntaxState } from './types'
 
 const props = withDefaults(defineProps<{
   modelValue: string
@@ -62,6 +68,8 @@ const props = withDefaults(defineProps<{
   uploadImages?: MarkdownUploadImages
   onLinkClick?: MarkdownLinkHandler
   editingStyle?: MarkdownEditingStyle
+  editingEffects?: MarkdownEditingEffects
+  syntaxEditing?: Record<string, { reveal?: 'always' | 'near' | 'inside' | 'never'; effect?: 'theme' | 'pause-inside' | 'pause-active' | 'none' }>
 }>(), {
   profile: 'article',
   disabled: false,
@@ -73,6 +81,10 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   'update:modelValue': [value: string]
   validity: [value: boolean]
+  focus: [state: MarkdownInputState]
+  blur: [state: MarkdownInputState]
+  'state-change': [state: MarkdownInputState]
+  'syntax-state-change': [states: MarkdownSyntaxState[]]
 }>()
 
 const current = ref(props.modelValue)

@@ -1,8 +1,37 @@
 import type { MarkdownSyntaxRegistry } from '@n0v0rland-md/core'
+import type { MarkdownSyntaxEffect, MarkdownSyntaxReveal } from '@n0v0rland-md/core'
 
 export type MarkdownEditorMode = 'visual' | 'source' | 'preview'
 export type MarkdownEditorProfile = 'article' | 'comment'
 export type MarkdownEditingStyle = 'always' | 'blur-hidden' | 'structure'
+export type MarkdownEditingEffects = 'theme' | 'stable' | 'none'
+
+export interface MarkdownInputState {
+  value: string
+  length: number
+  hasContent: boolean
+  empty: boolean
+  focused: boolean
+  mode: MarkdownEditorMode
+  disabled: boolean
+  maxLength: number
+  overLimit: boolean
+}
+export interface MarkdownSyntaxState {
+  syntaxKind: string
+  from: number
+  to: number
+  bodyFrom: number
+  bodyTo: number
+  focused: boolean
+  caretInside: boolean
+  boundaryNear: boolean
+  selected: boolean
+  effectPaused: boolean
+  boundaryVisible: boolean
+  reveal?: MarkdownSyntaxReveal
+  effect?: MarkdownSyntaxEffect
+}
 
 export interface MarkdownEditorAdapter {
   profile: MarkdownEditorProfile
@@ -30,6 +59,8 @@ export interface MarkdownEditorProps {
   uploadImages?: MarkdownUploadImages
   onLinkClick?: MarkdownLinkHandler
   editingStyle?: MarkdownEditingStyle
+  editingEffects?: MarkdownEditingEffects
+  syntaxEditing?: Record<string, { reveal?: MarkdownSyntaxReveal; effect?: MarkdownSyntaxEffect }>
   highlightCode?: MarkdownHighlightCode
   renderMermaid?: MarkdownRenderMermaid
 }

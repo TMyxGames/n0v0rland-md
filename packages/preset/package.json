@@ -16,6 +16,7 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@n0v0rland-md/markdown-it-adapter": "workspace:*",
     "@n0v0rland-md/core": "workspace:*",
     "highlight.js": "^11.11.1",
     "markdown-it": "^14.1.0",

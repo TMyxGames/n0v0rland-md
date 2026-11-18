@@ -1,4 +1,7 @@
 export type MarkdownSyntaxScope = 'inline' | 'block'
+export type MarkdownSyntaxReveal = 'always' | 'near' | 'inside' | 'never'
+export type MarkdownSyntaxEffect = 'theme' | 'pause-inside' | 'pause-active' | 'none'
+export type MarkdownSyntaxBoundary = 'visible' | 'hidden' | 'structure'
 
 export interface MarkdownSyntaxToolbar {
   kind?: string
@@ -30,6 +33,11 @@ export interface MarkdownSyntaxDefinition {
   getInlineParts?: (raw: string) => { open: string; body: string; close: string } | undefined
   /** Keep existing plain-text plugin behavior unless nesting is explicit. */
   contentMode?: 'text' | 'markdown'
+  editing?: {
+    reveal?: MarkdownSyntaxReveal
+    effect?: MarkdownSyntaxEffect
+    boundary?: MarkdownSyntaxBoundary
+  }
   toolbar?: MarkdownSyntaxToolbar
   /**
    * A syntax without a reliable source range remains a source fallback.

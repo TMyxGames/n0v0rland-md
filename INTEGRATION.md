@@ -173,3 +173,106 @@ function insertTable(rows: number, columns: number) {
 
 宿主需启用 Markdown-it 的 table 规则。表格属于块级工具，受限评论配置可以继续
 从工具栏移除它。复杂表格仍保留为源码，不转换成会丢失信息的简化结构。
+# 输入状态与样式定制
+
+## 语法、预览与编辑效果
+
+Markdown-it 决定语法语义。编辑器复用 block/inline token 与自定义 renderer 的
+语义外壳，只附加源码范围、语法边界和操作元素；不能可靠映射的行内内容保留为
+原文，不再通过正则自行激活第二套语法。
+
+`@n0v0rland-md/markdown-it-adapter` 提供可选的 `inlineSyntaxPlugin` 和
+`bracketSyntaxParts`，可以由同一份定义配置识别规则、子 token、正式预览和编辑：
+
+```ts
+import { bracketSyntaxParts, inlineSyntaxPlugin, createMarkdownItAdapter } from '@n0v0rland-md/markdown-it-adapter'
+
+const syntax = [{
+  name: 'aside',
+  scope: 'inline' as const,
+  className: 'my-aside',
+  contentMode: 'markdown' as const,
+  getInlineParts: bracketSyntaxParts,
+  toolbar: { label: '旁白', before: '::aside[', after: ']' },
+}]
+markdown.use(inlineSyntaxPlugin, syntax)
+const adapter = createMarkdownItAdapter({ markdown, syntax })
+```
+
+`::aside[**内容**]` 会同时在编辑和预览中使用加粗。
+`contentMode: 'text'` 则保持内部源码为纯文本。新插件将 contentMode 写入 token
+meta，编辑态优先遵守解析器声明；旧插件未提供时遵守适配定义，默认纯文本。
+括号支持嵌套、反斜杠转义及代码跨度；空内容、未闭合结构和跨行结构不生效。
+嵌套表达式最多解析 32 层，继续嵌套保留原文。
+
+默认 preset 不安装 loud、whisper、inner。演示页通过配置注入；主站配置以及
+legacy `createSiteMarkdown()` 中，这三个表达式已升级为支持内部行内 Markdown，
+`raw` 保持纯文本。历史内容中未转义的 `*` 等符号现在可能生效；需要原样显示时，
+使用 raw 或 Markdown 转义。评论继续遵守评论解析器的语法限制。
+
+`MarkdownInput`、`MarkdownVisualEditor` 和默认 `MarkdownEditor` 支持
+`editingEffects`：
+
+| 值 | 编辑态行为 |
+| --- | --- |
+| `stable`（默认） | 当前选区所在块暂停动画和 hover 位移，其他块保留主题效果 |
+| `theme` | 跟随主题，允许编辑区域的动态效果 |
+| `none` | 禁用编辑态动画与 hover 位移 |
+
+隐藏文本在光标进入时清晰，离开后恢复主题模糊。减弱动效偏好始终优先。
+经典主题本身不包含主站的标题位移或独白颤抖；编辑策略不会凭空增加主题效果。
+粗斜体由标准 em/strong 嵌套表达，不作为特殊的三星号语法实现；宿主字体需要
+提供斜体字形或允许 `font-synthesis: style`，否则 computed font-style 为 italic
+也可能没有可见倾斜。演示页已允许字体合成。
+
+主站集成快照通过 `pnpm run sync:homepage` 生成，使用
+`node scripts/sync-homepage-example.mjs --check` 验证是否与相邻主站源码一致。
+快照不作为另一套手工维护的解析规则。
+
+## 输入状态与样式定制
+
+`MarkdownInput` 和默认输入槽中的 `MarkdownEditor` 支持 `focus`、`blur`、
+`state-change` 事件。三个事件均传入导出的 `MarkdownInputState` 类型：
+
+```ts
+interface MarkdownInputState {
+  value: string
+  length: number       // 原始 Markdown 的 UTF-16 长度，与 value.length 相同
+  hasContent: boolean  // 空格和换行也属于内容
+  empty: boolean
+  focused: boolean
+  mode: 'visual' | 'source' | 'preview'
+  disabled: boolean
+  maxLength: number
+  overLimit: boolean
+}
+```
+
+`state-change` 首次挂载时发出，随后在正文、焦点、模式、禁用状态或长度上限
+变化时发出；`focus`、`blur` 只在输入区域的焦点状态实际变化时发出。
+编辑器内部控件之间转移焦点不会重复触发。预览链接的焦点不算输入焦点。
+替换 `MarkdownEditor` 的整个 input 插槽时，需要由自定义输入组件自行提供状态事件。
+状态中的内容是已经提交到 `v-model` 的 Markdown；输入法组合文本会在组合结束后更新。
+
+```vue
+<MarkdownInput
+  v-model="markdown"
+  mode="visual"
+  :adapter="adapter"
+  @state-change="state = $event"
+/>
+<span :class="{ 'is-floating': state.focused || state.hasContent }">评论内容</span>
+```
+
+输入面板也提供 `.is-focused`、`.has-content`、`.is-empty` 类，以及
+`data-focused`、`data-empty`、`data-length` 属性，方便直接使用 CSS。
+浮动标签由宿主布局提供；编辑器的原生 placeholder 仍只在空内容时显示。
+
+语法边界字体默认继承正文，颜色默认使用淡绿色；主题可以覆盖：
+
+```css
+.my-editor {
+  --mde-syntax-font-family: 'Maple Mono', inherit;
+  --mde-syntax-color: #568767;
+}
+```

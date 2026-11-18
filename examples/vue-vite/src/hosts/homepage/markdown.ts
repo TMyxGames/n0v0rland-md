@@ -2,6 +2,7 @@
 // Keep its runtime behavior unchanged while the surrounding utilities migrate.
 // @ts-nocheck
 import MarkdownIt from 'markdown-it';
+import { bracketSyntaxParts, inlineSyntaxPlugin } from '@n0v0rland-md/markdown-it-adapter';
 import tocPlugin from 'markdown-it-toc-done-right';
 import anchor from 'markdown-it-anchor'; // 标题锚点
 import mark from 'markdown-it-mark'; // 代码
@@ -11,6 +12,41 @@ import { full as emoji } from 'markdown-it-emoji'; // 表情
 import markdownItTaskLists from 'markdown-it-task-lists'; // 任务列表
 import markdownItFootnote from 'markdown-it-footnote';
 import container from 'markdown-it-container'; // 自定义容器
+
+export const expressionSyntax = [
+    { name: 'loud', className: 'bd-markdown-loud', label: '大声' },
+    { name: 'whisper', className: 'bd-markdown-whisper', label: '小声' },
+    { name: 'inner', className: 'bd-markdown-inner-thought', label: '内心独白' },
+    { name: 'raw', aliases: ['不解析', 'no-parse', 'no parse'], className: 'bd-markdown-no-parse-inline', label: '不解析' },
+].map(({ name, aliases, className, label }) => ({
+    name, aliases, className, scope: 'inline' as const,
+    contentMode: name === 'raw' ? 'text' as const : 'markdown' as const,
+    editing: name === 'inner' || name === 'raw'
+      ? { reveal: 'near' as const, effect: name === 'inner' ? 'pause-inside' as const : 'theme' as const }
+      : { reveal: 'near' as const, effect: 'theme' as const },
+    getInlineParts: bracketSyntaxParts,
+    toolbar: { label, before: `::${name}[`, after: ']' },
+}));
+
+export const spoilerSyntax = {
+  name: 'spoiler',
+  scope: 'inline' as const,
+  className: 'bd-markdown-theme-spoiler',
+  getInlineParts(raw: string) {
+    return raw.startsWith('||') && raw.endsWith('||')
+      ? { open: '||', body: raw.slice(2, -2), close: '||' }
+      : undefined
+  },
+  getSourceRange(_token: unknown, context: { source: string; tokenFrom?: number }) {
+    const from = context.tokenFrom || 0
+    const raw = context.source.slice(from).match(/^\|\|[^|\n]+\|\|/)?.[0]
+    return raw ? { from, to: from + raw.length } : undefined
+  },
+  toolbar: { label: '隐藏内容', before: '||', after: '||', profiles: ['comment' as const] },
+  editing: { reveal: 'near' as const, effect: 'pause-inside' as const },
+}
+
+export const commentSyntax = [spoilerSyntax, ...expressionSyntax]
 
 const md = new MarkdownIt({
     // 用户文章正文会通过 v-html 挂载；禁止 Markdown 原始 HTML，避免
@@ -137,20 +173,16 @@ md.renderer.rules.no_parse_block = tokens => {
 };
 
 // Inline custom marks: ::小声哔哔[内容] / ::whisper[内容] / ::内心活动[内容]
-md.inline.ruler.before('text', 'inline_custom_marks', (state, silent) => {
-    const match = state.src.slice(state.pos).match(/^::(whisper|loud|inner|不解析|no[ -]?parse|raw)\[([^\]\n]+)\]/i);
-    if (!match) return false;
-    if (!silent) {
-        const isNoParse = /^(不解析|no[ -]?parse|raw)$/i.test(match[1]);
-        const className = isNoParse
-            ? 'bd-markdown-no-parse-inline'
-            : /inner/i.test(match[1]) ? 'bd-markdown-inner-thought' : /loud/i.test(match[1]) ? 'bd-markdown-loud' : 'bd-markdown-whisper';
-        const token = state.push('html_inline', '', 0);
-        token.content = `<span class="${className}">${state.md.utils.escapeHtml(match[2])}</span>`;
-    }
-    state.pos += match[0].length;
+const textWithPipe = (state, silent) => {
+    let pos = state.pos;
+    while (pos < state.posMax && !/[\n!#$%&*+\-:<=>@[\\\]^_`{}~|]/.test(state.src[pos])) pos += 1;
+    if (pos === state.pos) return false;
+    if (!silent) state.pending += state.src.slice(state.pos, pos);
+    state.pos = pos;
     return true;
-});
+};
+md.inline.ruler.at('text', textWithPipe);
+md.use(inlineSyntaxPlugin, expressionSyntax);
 md.use(anchor, {
     permalink: false, // 我们不需要在标题后显示链接符号
     slugify: (s) => encodeURIComponent(String(s).trim().toLowerCase().replace(/\s+/g, '-')) 
@@ -438,6 +470,7 @@ md.inline.ruler.before('text', 'spoiler', (state, silent) => {
     if (!silent) {
         // 标记开始标签
         const tokenOpen = state.push('spoiler_open', 'span', 1);
+        tokenOpen.markup = '||';
         tokenOpen.attrs = [['class', 'bd-markdown-theme-spoiler']];
         // 限制解析范围，只处理 || 和 || 之间的内容
         const oldMax = state.posMax;
@@ -448,7 +481,7 @@ md.inline.ruler.before('text', 'spoiler', (state, silent) => {
         // 恢复环境
         state.posMax = oldMax;
         // 标记结束标签
-        state.push('spoiler_close', 'span', -1);
+        state.push('spoiler_close', 'span', -1).markup = '||';
     }
 
     state.pos = end + 2;
@@ -497,34 +530,26 @@ commentMd.use(ins);
 commentMd.linkify.tlds(['xyz'], true);
 preferHttpsForBareLinks(commentMd.linkify);
 commentMd.disable(['heading', 'lheading', 'blockquote', 'list', 'hr', 'table', 'html_block', 'link', 'image', 'autolink']);
+commentMd.inline.ruler.at('text', textWithPipe);
 
 commentMd.inline.ruler.before('text', 'comment_spoiler', (state, silent) => {
     const start = state.pos;
     if (!state.src.startsWith('||', start)) return false;
-    const end = state.src.indexOf('||', start + 2);
-    if (end <= start + 2) return false;
+    const match = state.src.slice(start, state.posMax).match(/^\|\|([^|\n]+)\|\|/);
+    if (!match) return false;
+    const end = start + match[0].length - 2;
     if (!silent) {
         const token = state.push('html_inline', '', 0);
         token.content = `<span class="bd-markdown-theme-spoiler" tabindex="0">${state.md.utils.escapeHtml(state.src.slice(start + 2, end))}</span>`;
+        token.meta = { syntaxKind: 'spoiler', sourceFrom: start, sourceTo: end + 2 };
     }
     state.pos = end + 2;
     return true;
 });
 
-commentMd.inline.ruler.before('text', 'comment_custom_marks', (state, silent) => {
-    const match = state.src.slice(state.pos).match(/^::(whisper|loud|inner|不解析|no[ -]?parse|raw)\[([^\]\n]+)\]/i);
-    if (!match) return false;
-    if (!silent) {
-        const isNoParse = /^(不解析|no[ -]?parse|raw)$/i.test(match[1]);
-        const className = isNoParse
-            ? 'bd-markdown-no-parse-inline'
-            : /inner/i.test(match[1]) ? 'bd-markdown-inner-thought' : /loud/i.test(match[1]) ? 'bd-markdown-loud' : 'bd-markdown-whisper';
-        const token = state.push('html_inline', '', 0);
-        token.content = `<span class="${className}">${state.md.utils.escapeHtml(match[2])}</span>`;
-    }
-    state.pos += match[0].length;
-    return true;
-});
+commentMd.use(inlineSyntaxPlugin, expressionSyntax);
+
+md.use(inlineSyntaxPlugin, expressionSyntax);
 
 commentMd.renderer.rules.link_open = (tokens, idx, options, env, self) => {
     const token = tokens[idx];
@@ -547,18 +572,12 @@ commentMd.renderer.rules.fence = (tokens, idx) => {
 };
 
 export const renderCommentMarkdown = value => {
-    const spoilers = [];
-    const source = String(value || '').replace(/\|\|([^|\n]+)\|\|/g, (_, content) => {
-        const index = spoilers.push(content) - 1;
-        return `COMMENTSP${index}TOKEN`;
-    });
-    return commentMd.render(source).replace(/COMMENTSP(\d+)TOKEN/g, (_, index) => (
-        `<span class="bd-markdown-theme-spoiler" tabindex="0">${commentMd.utils.escapeHtml(spoilers[Number(index)] || '')}</span>`
-    )).replace(/(<a[^>]*data-link-kind="article"[^>]*>)(.*?)(<\/a>)/gi, (_, open, text, close) => {
+    return commentMd.render(String(value || '')).replace(/(<a[^>]*data-link-kind="article"[^>]*>)(.*?)(<\/a>)/gi, (_, open, text, close) => {
         const href = open.match(/href="([^"]+)"/i)?.[1] || '';
         const icon = text.match(/<span class="bd-link-icon[^>]*><\/span>/i)?.[0] || linkIcon('article');
         return `${open}${icon}${commentMd.utils.escapeHtml(articleBloomIdFromUrl(href))}${close}`;
     });
 };
 
+export { commentMd };
 export default md;

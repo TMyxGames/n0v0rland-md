@@ -26,6 +26,13 @@
               <option value="structure">仅保留结构</option>
             </select>
           </label>
+          <label class="playground__editing-style">编辑效果
+            <select v-model="editingEffects" aria-label="选择编辑动效">
+              <option value="stable">编辑时稳定</option>
+              <option value="theme">跟随主题</option>
+              <option value="none">关闭动效</option>
+            </select>
+          </label>
           <button class="playground__theme" type="button" :title="dark ? '切换亮色主题' : '切换暗色主题'" :aria-label="dark ? '切换亮色主题' : '切换暗色主题'" @click="dark = !dark">
             <span class="playground__icon" :style="iconStyle(dark ? lightIcon : darkIcon)" aria-hidden="true" />
           </button>
@@ -33,7 +40,7 @@
       </div>
       <MarkdownToolbar class="playground__toolbar" :mode="mode" :tools="tools" :labels="labels" :show-source="true" :show-preview="true" @set-mode="mode = $event" @insert-syntax="insertSyntax" @insert-table="insertTable" />
     </header>
-    <MarkdownInput ref="input" v-model="markdown" :mode="mode" :adapter="adapter" :editing-style="editingStyle" :highlight-code="highlightCode" :render-mermaid="renderMermaid" />
+    <MarkdownInput ref="input" v-model="markdown" :mode="mode" :adapter="adapter" :editing-style="editingStyle" :editing-effects="editingEffects" :highlight-code="highlightCode" :render-mermaid="renderMermaid" />
   </main>
 </template>
 
@@ -44,7 +51,7 @@ import mermaid from 'mermaid'
 import { createMarkdownItAdapter } from '@n0v0rland-md/markdown-it-adapter'
 import { createMarkdownItPreset } from '@n0v0rland-md/preset'
 import { MarkdownInput, MarkdownToolbar, syntaxPairs } from '@n0v0rland-md/vue'
-import type { MarkdownEditingStyle } from '@n0v0rland-md/vue'
+import type { MarkdownEditingStyle, MarkdownEditingEffects } from '@n0v0rland-md/vue'
 import type { MarkdownEditorMode, MarkdownInputExpose } from '@n0v0rland-md/vue'
 import { expressionPlugin, expressionSyntax } from './expression-syntax'
 import { playgroundThemes } from './theme-config'
@@ -63,6 +70,7 @@ const initialConfig = query.get('config') === 'homepage' ? 'homepage' : 'default
 const markdown = ref(query.get('sample') === 'homepage' ? homepageDemo : demoMarkdown)
 const mode = ref<MarkdownEditorMode>('visual')
 const editingStyle = ref<MarkdownEditingStyle>('blur-hidden')
+const editingEffects = ref<MarkdownEditingEffects>('stable')
 const dark = ref(false)
 const themeId = ref(initialConfig === 'homepage' ? 'homepage' : 'classic')
 const configId = ref(initialConfig)

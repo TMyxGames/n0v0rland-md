@@ -4,6 +4,7 @@
     ref="root"
     class="markdown-visual-editor bd-markdown-theme"
     :class="{ 'is-disabled': disabled, 'is-comment': profile === 'comment', 'is-structure-mode': editingStyle === 'structure', 'is-always-syntax': editingStyle === 'always' }"
+    :data-editing-effects="editingEffects"
     :contenteditable="!disabled && tableSourceDraft === undefined"
     lang="zh-CN"
     translate="no"
@@ -64,7 +65,7 @@ import { createMarkdownTable, completeMarkdownTableHeader, parseMarkdownTable, u
 import type { TableAlignment, TableCommand } from '@n0v0rland-md/core'
 import MarkdownTableControls from './MarkdownTableControls.vue'
 import { copyPresentation, inlinePresentation } from './markdown-presentation'
-import type { MarkdownEditorAdapter, MarkdownEditingStyle, MarkdownHighlightCode, MarkdownLinkHandler, MarkdownRenderMermaid } from './types'
+import type { MarkdownEditorAdapter, MarkdownEditingStyle, MarkdownEditingEffects, MarkdownHighlightCode, MarkdownLinkHandler, MarkdownRenderMermaid, MarkdownSyntaxState } from './types'
 
 type Profile = 'article' | 'comment'
 const props = withDefaults(defineProps<{
@@ -75,11 +76,13 @@ const props = withDefaults(defineProps<{
   renderMermaid?: MarkdownRenderMermaid
   onLinkClick?: MarkdownLinkHandler
   editingStyle?: MarkdownEditingStyle
+  editingEffects?: MarkdownEditingEffects
+  syntaxEditing?: Record<string, { reveal?: 'always' | 'near' | 'inside' | 'never'; effect?: 'theme' | 'pause-inside' | 'pause-active' | 'none' }>
   disabled?: boolean
   placeholder?: string
   label?: string
-}>(), { profile: 'article', editingStyle: 'blur-hidden', disabled: false, placeholder: '请输入内容…', label: 'Markdown 内容' })
-const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
+}>(), { profile: 'article', editingStyle: 'blur-hidden', editingEffects: 'stable', disabled: false, placeholder: '请输入内容…', label: 'Markdown 内容' })
+const emit = defineEmits<{ 'update:modelValue': [value: string]; 'syntax-state-change': [states: MarkdownSyntaxState[]] }>()
 const root = ref<HTMLElement>()
 const composing = ref(false)
 const focused = ref(false)
@@ -244,10 +247,10 @@ type InlineToken = {
   markup?: string
   children?: InlineToken[]
   attrs?: [string, string][]
-  meta?: { sourceFrom?: number; sourceTo?: number; syntaxKind?: string; id?: number; label?: string }
+  meta?: { sourceFrom?: number; sourceTo?: number; syntaxKind?: string; contentMode?: 'text' | 'markdown'; id?: number; label?: string }
 }
 
-function tokenInlineNodes(text: string, start: number, activeFrom = -1, activeTo = -1) {
+function tokenInlineNodes(text: string, start: number, activeFrom = -1, activeTo = -1, originalTokens?: InlineToken[]) {
   let tokens: InlineToken[]
   try {
     const document = sourceDocumentFor(source)
@@ -256,11 +259,11 @@ function tokenInlineNodes(text: string, start: number, activeFrom = -1, activeTo
     // Reuse original parser tokens when this is the block's complete inline
     // content. Partial/nested bodies still share the full document's env.
     const parsed = inline?.length === 1 ? inline[0] : props.adapter.markdown.parseInline?.(text, document.env)?.[0]
-    tokens = parsed?.children as InlineToken[] || []
+    tokens = originalTokens || parsed?.children as InlineToken[] || []
   } catch {
     return null
   }
-  const supported = new Set(['text', 'text_special', 'softbreak', 'hardbreak', 'strong_open', 'strong_close', 'em_open', 'em_close', 's_open', 's_close', 'ins_open', 'ins_close', 'mark_open', 'mark_close', 'code_inline', 'html_inline', 'link_open', 'link_close', 'image', 'emoji', 'footnote_ref'])
+  const supported = new Set(['text', 'text_special', 'softbreak', 'hardbreak', 'strong_open', 'strong_close', 'em_open', 'em_close', 's_open', 's_close', 'ins_open', 'ins_close', 'mark_open', 'mark_close', 'spoiler_open', 'spoiler_close', 'code_inline', 'html_inline', 'link_open', 'link_close', 'image', 'emoji', 'footnote_ref'])
   if (!tokens.length || tokens.some(token => {
     if (supported.has(token.type)) return false
     return !Boolean(token.meta?.syntaxKind && props.adapter.syntax?.resolve(token.meta.syntaxKind)?.getInlineParts)
@@ -536,65 +539,30 @@ function tokenInlineNodes(text: string, start: number, activeFrom = -1, activeTo
         fragment.append(wrapper)
         continue
       }
-      if (token.meta?.syntaxKind && token.type !== 'html_inline') {
+      if (token.meta?.syntaxKind) {
         const definition = props.adapter.syntax?.resolve(token.meta.syntaxKind)
         const range = customRange(token)
-        if (!range) return null
-        const rawFrom = range.from
-        const rawTo = range.to
-        const raw = text.slice(rawFrom, rawTo)
-        const parts = definition?.getInlineParts?.(raw)
-        if (!definition || !parts || rawFrom !== cursor || !parts.body || parts.open + parts.body + parts.close !== raw) return null
+        if (!range || !definition) return null
+        const raw = text.slice(range.from, range.to)
+        const parts = definition.getInlineParts?.(raw)
+        if (!parts || range.from !== cursor || !parts.body || parts.open + parts.body + parts.close !== raw) return null
         const open = consume(parts.open, true)
-        const body = consume(parts.body)
+        const body = consume(parts.body, true)
         const close = consume(parts.close, true)
         if (!open || !body || !close) return null
         const wrapper = document.createElement('span')
         wrapper.className = definition.editorClassName || definition.className || ''
+        wrapper.dataset.syntaxKind = definition.name
         if (definition.className && definition.editorClassName && definition.className !== definition.editorClassName) {
           wrapper.classList.add(definition.className)
         }
         const active = nearSyntax(activeFrom, activeTo, open.from, open.to) || nearSyntax(activeFrom, activeTo, close.from, close.to)
         wrapper.dataset.sourceFrom = String(open.from)
         wrapper.dataset.sourceTo = String(close.to)
-        const content = definition.contentMode === 'markdown'
-          ? inlineNodes(parts.body, body.from, activeFrom, activeTo)
+        const content = (token.meta.contentMode || definition.contentMode) === 'markdown'
+          ? tokenInlineNodes(parts.body, body.from, activeFrom, activeTo, token.children) || textNode(parts.body, body.from, body.to)
           : textNode(parts.body, body.from, body.to)
         wrapper.append(boundary(parts.open, open.from, open.to, active), content, boundary(parts.close, close.from, close.to, active))
-        fragment.append(wrapper)
-        continue
-      }
-      if (token.type === 'html_inline' && token.meta?.syntaxKind) {
-        const range = customRange(token)
-        if (!range) return null
-        const rawFrom = range.from
-        const rawTo = range.to
-        if (rawFrom !== cursor) return null
-        const raw = text.slice(rawFrom, rawTo)
-        const openLength = raw.indexOf('[') + 1
-        if (openLength <= 0 || !raw.endsWith(']')) return null
-        const open = consume(raw.slice(0, openLength), true)
-        const body = consume(raw.slice(openLength, raw.length - 1))
-        const close = consume(']', true)
-        if (!open || !body || !close) return null
-        const kind = token.meta.syntaxKind.toLowerCase()
-        const definition = props.adapter.syntax?.resolve(kind)
-        const defaultClassName = /^(?:不解析|no[ -]?parse|raw)$/.test(kind)
-          ? 'bd-markdown-no-parse-inline'
-          : kind === 'inner' ? 'bd-markdown-inner-thought'
-            : kind === 'loud' ? 'bd-markdown-loud' : 'bd-markdown-whisper'
-        const wrapper = document.createElement('span')
-        wrapper.className = definition?.editorClassName || definition?.className || defaultClassName
-        if (definition?.className && definition.editorClassName && definition.className !== definition.editorClassName) {
-          wrapper.classList.add(definition.className)
-        }
-        wrapper.dataset.sourceFrom = String(open.from)
-        wrapper.dataset.sourceTo = String(close.to)
-        const active = nearSyntax(activeFrom, activeTo, open.from, open.to) || nearSyntax(activeFrom, activeTo, close.from, close.to)
-        const bodyContent = /^(?:不解析|no[ -]?parse|raw)$/.test(kind)
-          ? textNode(text.slice(body.from - start, body.to - start), body.from, body.to)
-          : inlineNodes(text.slice(body.from - start, body.to - start), body.from, activeFrom, activeTo)
-        wrapper.append(boundary(raw.slice(0, openLength), open.from, open.to, active), bodyContent, boundary(']', close.from, close.to, active))
         fragment.append(wrapper)
         continue
       }
@@ -629,152 +597,11 @@ function tokenInlineNodes(text: string, start: number, activeFrom = -1, activeTo
 }
 
 function inlineNodes(text: string, start: number, activeFrom = -1, activeTo = -1) {
-  const tokenResult = tokenInlineNodes(text, start, activeFrom, activeTo)
-  if (tokenResult) return tokenResult
+  const parsed = tokenInlineNodes(text, start, activeFrom, activeTo)
+  if (parsed) return parsed
+  // Never infer another syntax from regex when the injected parser cannot be mapped.
   const fragment = document.createDocumentFragment()
-  let cursor = 0
-  inlinePattern.lastIndex = 0
-  let match: RegExpExecArray | null
-  while ((match = inlinePattern.exec(text))) {
-    const matchIndex = match.index
-    const from = start + matchIndex
-    const to = from + match[0].length
-    if (match.index > cursor) fragment.append(textNode(text.slice(cursor, match.index), start + cursor, from))
-    const raw = match[0]
-    const custom = raw.startsWith('::')
-    if (custom) {
-      const configured = tokenInlineNodes(raw, from, activeFrom, activeTo)
-      if (configured) {
-        fragment.append(configured)
-        cursor = matchIndex + raw.length
-        continue
-      }
-      // The regex fallback must not activate syntax absent from the injected parser.
-      const children = props.adapter.markdown.parseInline?.(raw, {})?.[0]?.children || []
-      if (!children.some((token: InlineToken) => token.meta?.syntaxKind || token.type === 'html_inline')) {
-        fragment.append(textNode(raw, from, to))
-        cursor = matchIndex + raw.length
-        continue
-      }
-    }
-    if (!custom && !/^:[a-z][a-z0-9_+-]*:$/i.test(raw) && !/^\[\^[^\]\n]+\]$/.test(raw)) {
-      const parsedRaw = props.adapter.markdown.parseInline?.(raw, {})?.[0]?.children || []
-      const syntaxToken = parsedRaw.some((token: InlineToken) =>
-        /^(strong|em|s|ins|mark)_open$/.test(token.type) || token.type === 'code_inline'
-        || token.type === 'image' || token.type === 'link_open' || token.type === 'autolink' || token.type === 'linkify')
-      if (!syntaxToken) {
-        fragment.append(textNode(raw, from, to))
-        cursor = matchIndex + raw.length
-        continue
-      }
-    }
-    const emoji = /^:[a-z][a-z0-9_+-]*:$/i.test(raw)
-    const footnote = /^\[\^[^\]\n]+\]$/.test(raw)
-    if (emoji) {
-      const span = document.createElement('span')
-      span.className = 'markdown-editor-emoji'
-      span.dataset.sourceFrom = String(from)
-      span.dataset.sourceTo = String(to)
-      span.textContent = raw
-      fragment.append(span)
-      cursor = matchIndex + raw.length
-      continue
-    }
-    if (footnote) {
-      fragment.append(footnoteReference(raw, from, to, activeFrom, activeTo))
-      cursor = matchIndex + raw.length
-      continue
-    }
-    const image = raw.startsWith('![')
-    const link = raw.startsWith('[') && !image
-    if (image || link) {
-      const match = raw.match(/^!?\[([^\]]*)\]\(([^) \n]+)(?:\s+"([^"]*)")?\)$/)
-      if (match) {
-        const openLength = raw.indexOf('](') + 2
-        const closeLength = 1
-        const wrapper = document.createElement(image ? 'span' : 'a')
-        wrapper.className = image ? 'markdown-editor-image' : 'markdown-editor-link'
-        wrapper.dataset.sourceFrom = String(from)
-        wrapper.dataset.sourceTo = String(to)
-        if (image) {
-          fragment.append(imageElement(raw, { from, bodyFrom: from + 2, bodyTo: from + 2 + match[1].length, to },
-            [['src', match[2]], ['title', match[3] || '']], activeFrom, activeTo))
-          cursor = matchIndex + raw.length
-          continue
-        } else {
-          const anchor = wrapper as HTMLAnchorElement
-          anchor.href = match[2]; anchor.target = '_blank'; anchor.rel = 'noopener noreferrer'
-          if (match[3]) anchor.title = match[3]
-          if (props.editingStyle === 'structure') {
-            const bodyEnd = from + 1 + match[1].length
-            const patternIndex = inlinePattern.lastIndex
-            const label = inlineNodes(match[1], from + 1, activeFrom, activeTo)
-            inlinePattern.lastIndex = patternIndex
-            wrapper.append(boundary('[', from, from + 1, false),
-              label,
-              boundary(raw.slice(1 + match[1].length), bodyEnd, to, false))
-          } else {
-            wrapper.dataset.label = match[1]
-            const sourceNode = textNode(raw, from, to)
-            sourceNode.classList.add('markdown-editor-link-source')
-            wrapper.append(sourceNode)
-          }
-        }
-        fragment.append(wrapper); cursor = matchIndex + raw.length; continue
-      }
-      const reference = raw.match(/^\[([^\]]+)\]\[([^\]]+)\]$/)
-      if (reference) {
-        const definition = source.match(new RegExp(`^\\s*\\[${reference[2].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]:\\s*(\\S+)`, 'im'))
-        const wrapper = document.createElement(definition ? 'a' : 'span')
-        wrapper.className = 'markdown-editor-link markdown-editor-reference-link'
-        wrapper.dataset.sourceFrom = String(from)
-        wrapper.dataset.sourceTo = String(to)
-        wrapper.dataset.label = reference[1]
-        if (definition) {
-          const anchor = wrapper as HTMLAnchorElement
-          anchor.href = definition[1]
-          anchor.target = '_blank'
-          anchor.rel = 'noopener noreferrer'
-        }
-        if (props.editingStyle === 'structure') {
-          const bodyEnd = from + 1 + reference[1].length
-          const patternIndex = inlinePattern.lastIndex
-          const label = inlineNodes(reference[1], from + 1, activeFrom, activeTo)
-          inlinePattern.lastIndex = patternIndex
-          delete wrapper.dataset.label
-          wrapper.append(boundary('[', from, from + 1, false),
-            label,
-            boundary(raw.slice(1 + reference[1].length), bodyEnd, to, false))
-        } else {
-          const sourceNode = textNode(raw, from, to)
-          sourceNode.classList.add('markdown-editor-link-source')
-          wrapper.append(sourceNode)
-        }
-        fragment.append(wrapper)
-        cursor = matchIndex + raw.length
-        continue
-      }
-    }
-    const open = custom ? raw.indexOf('[') + 1 : raw.startsWith('**') || raw.startsWith('__') || raw.startsWith('++') || raw.startsWith('~~') || raw.startsWith('==') || raw.startsWith('||') ? 2 : 1
-    const close = custom ? 1 : open
-    const body = raw.slice(open, raw.length - close)
-    const kind = custom ? raw.slice(2, raw.indexOf('[')).toLowerCase() : raw.slice(0, open)
-    const tag = kind === '**' || kind === '__' ? 'strong' : kind === '*' || kind === '_' ? 'em' : kind === '++' ? 'u' : kind === '~~' ? 's' : kind === '==' ? 'mark' : kind === '`' ? 'code' : 'span'
-    const wrapper = document.createElement(tag)
-    wrapper.className = custom ? `bd-markdown-${/^(?:不解析|no[ -]?parse|raw)$/.test(kind) ? 'no-parse-inline' : kind === 'inner' ? 'inner-thought' : kind}` : ''
-    wrapper.dataset.sourceFrom = String(from)
-    wrapper.dataset.sourceTo = String(to)
-    const isActive = nearSyntax(activeFrom, activeTo, from, from + open) || nearSyntax(activeFrom, activeTo, to - close, to)
-    const outerPatternIndex = inlinePattern.lastIndex
-    const bodyContent = custom && /^(?:不解析|no[ -]?parse|raw)$/i.test(kind)
-      ? textNode(body, from + open, to - close)
-      : inlineNodes(body, from + open, activeFrom, activeTo)
-    inlinePattern.lastIndex = outerPatternIndex
-    wrapper.append(boundary(raw.slice(0, open), from, from + open, isActive), bodyContent, boundary(raw.slice(raw.length - close), to - close, to, isActive))
-    fragment.append(wrapper)
-    cursor = matchIndex + raw.length
-  }
-  if (cursor < text.length) fragment.append(textNode(text.slice(cursor), start + cursor, start + text.length))
+  fragment.append(textNode(text, start, start + text.length))
   return fragment
 }
 
@@ -1383,6 +1210,7 @@ function handleSelectionChange() {
     return
   }
   const range = selectionOffset()
+  updateEditingEffects(range)
   if (selectedImageRange && (range.from !== selectedImageRange.from || range.to !== selectedImageRange.to)) selectedImageRange = undefined
   for (const image of root.value.querySelectorAll<HTMLElement>('.markdown-editor-image')) {
     image.classList.toggle('is-selected', range.from === Number(image.dataset.sourceFrom) && range.to === Number(image.dataset.sourceTo))
@@ -1434,6 +1262,7 @@ function handleBlur() {
   verticalColumn = undefined
   verticalX = undefined
   focused.value = false
+  updateEditingEffects()
   activeSyntaxKey = ''
   window.clearTimeout(syntaxRevealTimer)
   if (props.editingStyle !== 'always') for (const marker of root.value?.querySelectorAll<HTMLElement>('.markdown-syntax-boundary') || []) {
@@ -1441,6 +1270,47 @@ function handleBlur() {
     marker.setAttribute('aria-hidden', 'true')
   }
   void enhanceMermaidBlocks()
+}
+
+function updateEditingEffects(range?: SelectionState) {
+  if (!root.value) return
+  for (const block of root.value.children) {
+    const from = Number((block as HTMLElement).dataset.sourceFrom)
+    const to = Number((block as HTMLElement).dataset.sourceTo)
+    block.classList.toggle('markdown-editing-active', !!range && range.to >= from && range.from <= to)
+  }
+  for (const spoiler of root.value.querySelectorAll<HTMLElement>('.bd-markdown-theme-spoiler')) {
+    const from = Number(spoiler.dataset.sourceFrom)
+    const to = Number(spoiler.dataset.sourceTo)
+    spoiler.classList.toggle('markdown-editing-revealed', !!range && range.to >= from && range.from <= to)
+  }
+    const states: MarkdownSyntaxState[] = []
+    for (const node of root.value.querySelectorAll<HTMLElement>('[data-syntax-kind][data-source-from][data-source-to]')) {
+      const syntaxKind = node.dataset.syntaxKind
+      if (!syntaxKind) continue
+      const from = Number(node.dataset.sourceFrom), to = Number(node.dataset.sourceTo)
+      const parts = props.adapter.syntax?.resolve(syntaxKind)
+      const raw = source.slice(from, to)
+      const parsed = parts?.getInlineParts?.(raw)
+      const bodyFrom = parsed ? from + parsed.open.length : from
+      const bodyTo = parsed ? to - parsed.close.length : to
+      const focused = !!range && range.from >= from && range.to <= to
+      const caretInside = !!range && range.from === range.to && range.from >= bodyFrom && range.from <= bodyTo
+      const boundaryNear = !!range && (Math.abs(range.from - from) <= 1 || Math.abs(range.to - to) <= 1)
+      const selected = !!range && range.from < to && range.to > from
+      const configured = props.syntaxEditing?.[syntaxKind]
+      const definition = parts?.editing
+      const effect = configured?.effect || definition?.effect || 'theme'
+      const reveal = configured?.reveal || definition?.reveal || 'near'
+      const effectPaused = effect === 'pause-inside' ? caretInside : effect === 'pause-active' ? focused : false
+      const boundaryVisible = reveal === 'always' || (reveal === 'inside' && caretInside) || (reveal === 'near' && (focused || boundaryNear))
+      node.classList.toggle('is-caret-inside', caretInside)
+      node.classList.toggle('is-syntax-active', focused)
+      node.classList.toggle('is-effect-paused', effectPaused)
+      node.classList.toggle('is-boundary-visible', boundaryVisible)
+      states.push({ syntaxKind, from, to, bodyFrom, bodyTo, focused, caretInside, boundaryNear, selected, effectPaused, boundaryVisible, reveal, effect })
+    }
+    emit('syntax-state-change', states)
 }
 
 function handlePointerDown(event: PointerEvent) {
@@ -1881,6 +1751,7 @@ function render(value: string, from = -1, to = from, backward = false) {
   root.value.classList.toggle('is-empty', !value)
   rendering = false
   if (from >= 0) setSelection(from, to, backward)
+  updateEditingEffects(focused.value && from >= 0 ? { from, to, backward } : undefined)
   updateTablePosition()
   void enhanceMermaidBlocks()
 }

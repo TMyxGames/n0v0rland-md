@@ -1,5 +1,8 @@
 <template>
-  <div class="mde__panel">
+  <div ref="panel" class="mde__panel"
+    :class="{ 'is-focused': focused, 'has-content': current.length > 0, 'is-empty': current.length === 0 }"
+    :data-focused="focused" :data-empty="current.length === 0" :data-length="current.length"
+    @focusin="handleFocusIn" @focusout="handleFocusOut">
     <MarkdownVisualEditor
       v-if="mode === 'visual'"
       ref="visual"
@@ -10,8 +13,11 @@
       :render-mermaid="renderMermaid"
       :on-link-click="onLinkClick"
       :editing-style="editingStyle"
+      :editing-effects="editingEffects"
+      :syntax-editing="syntaxEditing"
       :disabled="disabled"
       :placeholder="placeholder"
+      @syntax-state-change="handleSyntaxState"
     />
     <textarea
       v-else-if="mode === 'source'"
@@ -34,11 +40,11 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { createMarkdownTable } from '@n0v0rland-md/core'
 import MarkdownVisualEditor from './MarkdownVisualEditor.vue'
 import MarkdownPreview from './MarkdownPreview.vue'
-import type { MarkdownEditorAdapter, MarkdownEditorMode, MarkdownEditorProfile, MarkdownEditingStyle, MarkdownHighlightCode, MarkdownInputExpose, MarkdownLinkHandler, MarkdownRenderMermaid } from './types'
+import type { MarkdownEditorAdapter, MarkdownEditorMode, MarkdownEditorProfile, MarkdownEditingStyle, MarkdownEditingEffects, MarkdownHighlightCode, MarkdownInputExpose, MarkdownInputState, MarkdownLinkHandler, MarkdownRenderMermaid, MarkdownSyntaxState } from './types'
 
 const props = withDefaults(defineProps<{
   modelValue: string
@@ -52,6 +58,8 @@ const props = withDefaults(defineProps<{
   renderMermaid?: MarkdownRenderMermaid
   onLinkClick?: MarkdownLinkHandler
   editingStyle?: MarkdownEditingStyle
+  editingEffects?: MarkdownEditingEffects
+  syntaxEditing?: Record<string, { reveal?: 'always' | 'near' | 'inside' | 'never'; effect?: 'theme' | 'pause-inside' | 'pause-active' | 'none' }>
 }>(), {
   profile: 'article',
   disabled: false,
@@ -59,8 +67,45 @@ const props = withDefaults(defineProps<{
   maxLength: 0,
 })
 
-const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
+const emit = defineEmits<{
+  'update:modelValue': [value: string]
+  focus: [state: MarkdownInputState]
+  blur: [state: MarkdownInputState]
+  'state-change': [state: MarkdownInputState]
+  'syntax-state-change': [states: MarkdownSyntaxState[]]
+}>()
 const current = ref(props.modelValue)
+const panel = ref<HTMLElement>()
+const focused = ref(false)
+const state = computed<MarkdownInputState>(() => ({
+  value: current.value,
+  length: current.value.length,
+  hasContent: current.value.length > 0,
+  empty: current.value.length === 0,
+  focused: focused.value,
+  mode: props.mode,
+  disabled: props.disabled,
+  maxLength: props.maxLength,
+  overLimit: props.maxLength > 0 && current.value.length > props.maxLength,
+}))
+function handleFocusIn() {
+  if (props.mode === 'preview' || focused.value) return
+  focused.value = true
+  emit('focus', { ...state.value })
+}
+function handleFocusOut(event: FocusEvent) {
+  if (event.relatedTarget instanceof Node && panel.value?.contains(event.relatedTarget)) return
+  if (!focused.value) return
+  focused.value = false
+  emit('blur', { ...state.value })
+}
+watch(() => props.mode, () => {
+  if (focused.value) {
+    focused.value = false
+    emit('blur', { ...state.value })
+  }
+}, { flush: 'sync' })
+watch(state, value => emit('state-change', { ...value }), { immediate: true })
 const visual = ref<InstanceType<typeof MarkdownVisualEditor> | null>(null)
 const sourceInput = ref<HTMLTextAreaElement>()
 
@@ -68,6 +113,7 @@ watch(() => props.modelValue, value => {
   if (value !== current.value) current.value = value
 })
 watch(current, value => emit('update:modelValue', value))
+const handleSyntaxState = (states: MarkdownSyntaxState[]) => emit('syntax-state-change', states)
 
 defineExpose<MarkdownInputExpose>({
   focus: () => {

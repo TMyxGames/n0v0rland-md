@@ -973,6 +973,13 @@ img.img-load-failed {
     transition: all 0.25s ease;
 }
 
+/* Keep the same behavior inside both the visual editor and its formal preview. */
+.markdown-visual-editor .bd-markdown-theme-spoiler,
+.mde__preview .bd-markdown-theme-spoiler {
+    filter: blur(5px);
+    -webkit-filter: blur(5px);
+}
+
 .bd-markdown-theme-spoiler:hover{ 
     filter: blur(0);
     -webkit-filter: blur(0);

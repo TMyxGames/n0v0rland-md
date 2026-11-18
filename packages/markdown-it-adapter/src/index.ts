@@ -1,4 +1,5 @@
 import { createMarkdownSyntaxRegistry, type MarkdownSyntaxDefinition, type MarkdownSyntaxRegistry } from '@n0v0rland-md/core'
+export { bracketExpression, bracketSyntaxParts, inlineSyntaxPlugin } from './inline-syntax.js'
 
 export interface MarkdownItLike {
   parse(source: string, env: Record<string, any>): Array<{

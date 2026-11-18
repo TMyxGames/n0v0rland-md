@@ -1,6 +1,6 @@
 {
   "files": {
-    "src/utils/markdown.ts": "fcbc4da409d90160d8bcd0b1312bd07a098a6debd3bcb5d4318a5080fb966b9c",
+    "src/utils/markdown.ts": "bb7c6cf5e1a52f0d0ef43833157fe06450918dc5ca128729b9ca977d3916264b",
     "src/styles/BDmarkdown.css": "090657ae5718150de0b18f77af5072e911a1c0571b198374977f398256921a39",
     "src/styles/theme.css": "be0b0fb2e4bb6cf09838b8ffa02388a8ffdd2d6897cbbe9bd58168f04af56e1b"
   },
