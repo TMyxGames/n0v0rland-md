@@ -1,6 +1,12 @@
 {
   "name": "@n0v0rland-md/vue",
   "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TMyxGames/n0v0rland-md.git",
+    "directory": "packages/vue"
+  },
+  "publishConfig": { "access": "public" },
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -11,7 +17,11 @@
       "types": "./dist/types/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./style.css": "./dist/style.css"
+    "./style.css": "./dist/style.css",
+    "./editor.css": "./dist/editor.css",
+    "./visual.css": "./dist/visual.css",
+    "./table.css": "./dist/table.css",
+    "./toolbar.css": "./dist/toolbar.css"
   },
   "scripts": {
     "build": "vue-tsc -p tsconfig.build.json && vite build --config vite.config.ts"

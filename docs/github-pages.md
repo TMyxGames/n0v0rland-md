@@ -34,7 +34,9 @@ PAGES_BASE_PATH=/n0v0rland-md/
 
 ```powershell
 pnpm install --frozen-lockfile
-pnpm --filter @n0v0rland-md/playground build
+$env:VITE_USE_PACKAGED_EDITOR = 'true'
+pnpm run build
+pnpm run verify:packages
 pnpm --filter @n0v0rland-md/playground exec vite preview --host
 ```
 

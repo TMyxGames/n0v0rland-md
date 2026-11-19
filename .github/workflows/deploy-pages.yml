@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 permissions:
@@ -36,10 +38,24 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build playground
-        run: pnpm --filter @n0v0rland-md/playground build
+      - name: Verify editor and build playground
+        run: pnpm run verify
         env:
+          VITE_USE_PACKAGED_EDITOR: true
           VITE_BASE_PATH: ${{ vars.PAGES_BASE_PATH || '/' }}
+
+      - name: Verify package archives
+        run: pnpm run verify:packages
+
+      - name: Verify release tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: node --input-type=commonjs -e 'const { version } = require("./packages/vue/package.json"); if (process.env.GITHUB_REF_NAME !== `v${version}`) throw Error(`Tag must match package version v${version}`)'
+
+      - name: Install browser for regression tests
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Verify editor in Chromium
+        run: pnpm run verify:integration-browser
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

@@ -1,6 +1,12 @@
 {
   "name": "@n0v0rland-md/theme",
   "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TMyxGames/n0v0rland-md.git",
+    "directory": "packages/theme"
+  },
+  "publishConfig": { "access": "public" },
   "type": "module",
   "private": false,
   "files": ["src"],

@@ -1,6 +1,12 @@
 {
   "name": "@n0v0rland-md/core",
   "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TMyxGames/n0v0rland-md.git",
+    "directory": "packages/core"
+  },
+  "publishConfig": { "access": "public" },
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

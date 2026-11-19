@@ -298,3 +298,6 @@ pnpm add ../n0v0rland-md-vue-0.1.0.tgz
 ```
 
 宿主只需要安装 Vue peer dependency，并按需安装 `@n0v0rland-md/core`、Markdown-it adapter、preset 和 theme。
+
+- [MarkdownSyntaxDefinition 配置协议](docs/syntax-definition.md)
+- [发布、兼容性和主题样式入口](docs/release.md)
