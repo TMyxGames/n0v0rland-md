@@ -1401,6 +1401,7 @@ function handlePointerDown(event: PointerEvent) {
       setSelection(to)
     }
   }
+  window.setTimeout(handleSelectionChange, 0)
 }
 
 function setSelection(from: number, to = from, backward = false) {

@@ -247,13 +247,15 @@
 
 /* Geometry changes are paused only in active source blocks. Theme remains authoritative. */
 .markdown-visual-editor[data-editing-effects="stable"] .markdown-editing-active,
-.markdown-visual-editor[data-editing-effects="stable"] .markdown-editing-active *,
+.markdown-visual-editor[data-editing-effects="stable"] .markdown-editing-active > *:not([data-syntax-kind]):not(:has([data-syntax-kind])),
+.markdown-visual-editor[data-editing-effects="stable"] .markdown-editing-active > *:not([data-syntax-kind]):not(:has([data-syntax-kind])) *,
 .markdown-visual-editor[data-editing-effects="none"],
 .markdown-visual-editor[data-editing-effects="none"] * {
   animation: none !important;
 }
 .markdown-visual-editor[data-editing-effects="stable"] .markdown-editing-active:hover,
-.markdown-visual-editor[data-editing-effects="stable"] .markdown-editing-active *:hover,
+.markdown-visual-editor[data-editing-effects="stable"] .markdown-editing-active > *:not([data-syntax-kind]):not(:has([data-syntax-kind])):hover,
+.markdown-visual-editor[data-editing-effects="stable"] .markdown-editing-active > *:not([data-syntax-kind]):not(:has([data-syntax-kind])) *:hover,
 .markdown-visual-editor[data-editing-effects="none"] :hover {
   transform: none !important;
   transition: none !important;
@@ -263,6 +265,11 @@
   -webkit-filter: blur(5px);
 }
 .markdown-visual-editor .bd-markdown-theme-spoiler.markdown-editing-revealed {
+  filter: none !important;
+  -webkit-filter: none !important;
+}
+.markdown-visual-editor .bd-markdown-theme-spoiler:hover,
+.markdown-visual-editor .bd-markdown-theme-spoiler:focus {
   filter: none !important;
   -webkit-filter: none !important;
 }
