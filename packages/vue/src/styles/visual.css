@@ -295,3 +295,18 @@
   }
   .markdown-visual-editor :hover { transform: none !important; }
 }
+
+.markdown-visual-editor .markdown-editor-mermaid-controls { display: flex; justify-content: flex-end; }
+.markdown-visual-editor .markdown-editor-mermaid-controls button {
+  background: var(--color-surface, transparent);
+  color: var(--color-text, inherit);
+  border: 1px solid var(--color-surface-border, currentColor);
+  border-radius: .35rem;
+  padding: .2rem .5rem;
+  font: inherit;
+  cursor: pointer;
+}
+.markdown-visual-editor .markdown-editor-mermaid[data-mermaid-mode="source"] > .markdown-editor-mermaid-preview,
+.markdown-visual-editor .markdown-editor-mermaid[data-mermaid-mode="preview"] > :is(pre, .markdown-editor-code-fence) { display: none; }
+.markdown-visual-editor .markdown-editor-mermaid[data-mermaid-mode="preview"] > .markdown-editor-mermaid-preview { display: flex; }
+.markdown-visual-editor .markdown-custom-block-body { white-space: pre-wrap; }

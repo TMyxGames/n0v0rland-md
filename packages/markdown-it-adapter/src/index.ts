@@ -1,4 +1,4 @@
-import { createMarkdownSyntaxRegistry, type MarkdownSyntaxDefinition, type MarkdownSyntaxRegistry } from '@n0v0rland-md/core'
+import { createMarkdownSyntaxRegistry, type MarkdownSyntaxConfig, type MarkdownSyntaxDefinition, type MarkdownSyntaxRegistry } from '@n0v0rland-md/core'
 export { bracketExpression, bracketSyntaxParts, inlineSyntaxPlugin } from './inline-syntax.js'
 
 export interface MarkdownItLike {
@@ -22,7 +22,7 @@ export interface MarkdownItAdapterOptions {
   profile?: 'article' | 'comment'
   fallback?: 'raw' | 'throw'
   render?: (source: string, env?: Record<string, unknown>) => string
-  syntax?: MarkdownSyntaxRegistry | MarkdownSyntaxDefinition[]
+  syntax?: MarkdownSyntaxRegistry | MarkdownSyntaxConfig | readonly MarkdownSyntaxDefinition[]
 }
 
 export interface MarkdownItAdapter {
@@ -35,9 +35,10 @@ export interface MarkdownItAdapter {
 
 export function createMarkdownItAdapter(options: MarkdownItAdapterOptions): MarkdownItAdapter {
   const { markdown, profile = 'article' } = options
-  const syntax = Array.isArray(options.syntax)
-    ? createMarkdownSyntaxRegistry(options.syntax)
-    : options.syntax || createMarkdownSyntaxRegistry()
+  const input = options.syntax
+  const syntax = input && 'resolve' in input
+    ? createMarkdownSyntaxRegistry({ version: input.version, definitions: input.definitions })
+    : createMarkdownSyntaxRegistry(input)
   return {
     profile,
     markdown,

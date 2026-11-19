@@ -29,6 +29,8 @@
     @keydown="handleKeydown"
     @pointerdown="handlePointerDown"
     @pointermove="handleTableHover"
+    @pointerover="handleSyntaxHover"
+    @pointerout="handleSyntaxHover"
     @pointerleave="scheduleTableClose"
     @paste="handlePaste"
     @copy="handleCopy"
@@ -61,8 +63,8 @@
 
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { createMarkdownTable, completeMarkdownTableHeader, parseMarkdownTable, updateMarkdownTable, MarkdownSourceDocument, domPositionFromSourceOffset, sourceOffsetFromDOM, verticalDOMPosition, adjacentSourceOffset, listLineBreak, quoteLineBreak, structuralPrefix } from '@n0v0rland-md/core'
-import type { TableAlignment, TableCommand } from '@n0v0rland-md/core'
+import { resolveMarkdownSyntaxRange, createMarkdownTable, completeMarkdownTableHeader, parseMarkdownTable, updateMarkdownTable, MarkdownSourceDocument, domPositionFromSourceOffset, sourceOffsetFromDOM, verticalDOMPosition, adjacentSourceOffset, listLineBreak, quoteLineBreak, structuralPrefix } from '@n0v0rland-md/core'
+import type { MarkdownSourceBlock, TableAlignment, TableCommand } from '@n0v0rland-md/core'
 import MarkdownTableControls from './MarkdownTableControls.vue'
 import { copyPresentation, inlinePresentation } from './markdown-presentation'
 import type { MarkdownEditorAdapter, MarkdownEditingStyle, MarkdownEditingEffects, MarkdownHighlightCode, MarkdownLinkHandler, MarkdownRenderMermaid, MarkdownSyntaxState } from './types'
@@ -77,7 +79,7 @@ const props = withDefaults(defineProps<{
   onLinkClick?: MarkdownLinkHandler
   editingStyle?: MarkdownEditingStyle
   editingEffects?: MarkdownEditingEffects
-  syntaxEditing?: Record<string, { reveal?: 'always' | 'near' | 'inside' | 'never'; effect?: 'theme' | 'pause-inside' | 'pause-active' | 'none' }>
+  syntaxEditing?: Record<string, { reveal?: 'always' | 'near' | 'inside' | 'never'; effect?: 'theme' | 'pause-inside' | 'pause-active' | 'pause-hover' | 'none'; boundary?: 'visible' | 'hidden' | 'structure' }>
   disabled?: boolean
   placeholder?: string
   label?: string
@@ -217,6 +219,13 @@ function footnoteReference(spelling: string, from: number, to: number, activeFro
   number.textContent = `[${typeof id === 'number' && id >= 0 ? id + 1 : label}]`
   number.title = `脚注 ${label}，点击查看正文`
   number.setAttribute('role', 'button')
+  number.tabIndex = 0
+  number.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    event.preventDefault()
+    event.stopPropagation()
+    jumpToFootnote(label)
+  })
   number.setAttribute('aria-label', `查看脚注 ${label}`)
   const marker = boundary(spelling, from, to, nearSyntax(activeFrom, activeTo, from, to))
   wrapper.append(marker, number)
@@ -335,17 +344,10 @@ function tokenInlineNodes(text: string, start: number, activeFrom = -1, activeTo
     mark_open: 'mark',
   } as Record<string, string>)[type] || 'span'
   const customRange = (token: InlineToken) => {
-    try {
-      const configured = props.adapter.syntax?.resolve(token.meta?.syntaxKind)?.getSourceRange?.(token, {
-        source: text, blockFrom: start, tokenFrom: cursor,
-      })
-      const from = token.meta?.sourceFrom ?? configured?.from
-      const to = token.meta?.sourceTo ?? configured?.to
-      return from !== undefined && to !== undefined && Number.isInteger(from) && Number.isInteger(to)
-        && from === cursor && to >= from && to <= text.length ? { from, to } : undefined
-    } catch {
-      return
-    }
+    const definition = props.adapter.syntax?.resolve(token.meta?.syntaxKind)
+    if (definition?.scope !== 'inline') return
+    const range = resolveMarkdownSyntaxRange(token, definition, { source: text, blockFrom: start, tokenFrom: cursor })
+    return range?.from === cursor ? range : undefined
   }
   const linkSourceParts = (image: boolean) => {
     const beginning = cursor
@@ -544,7 +546,8 @@ function tokenInlineNodes(text: string, start: number, activeFrom = -1, activeTo
         const range = customRange(token)
         if (!range || !definition) return null
         const raw = text.slice(range.from, range.to)
-        const parts = definition.getInlineParts?.(raw)
+        let parts
+        try { parts = definition.getInlineParts?.(raw) } catch { return null }
         if (!parts || range.from !== cursor || !parts.body || parts.open + parts.body + parts.close !== raw) return null
         const open = consume(parts.open, true)
         const body = consume(parts.body, true)
@@ -560,8 +563,9 @@ function tokenInlineNodes(text: string, start: number, activeFrom = -1, activeTo
         wrapper.dataset.sourceFrom = String(open.from)
         wrapper.dataset.sourceTo = String(close.to)
         const content = (token.meta.contentMode || definition.contentMode) === 'markdown'
-          ? tokenInlineNodes(parts.body, body.from, activeFrom, activeTo, token.children) || textNode(parts.body, body.from, body.to)
+          ? tokenInlineNodes(parts.body, body.from, activeFrom, activeTo, token.children)
           : textNode(parts.body, body.from, body.to)
+        if (!content) return null
         wrapper.append(boundary(parts.open, open.from, open.to, active), content, boundary(parts.close, close.from, close.to, active))
         fragment.append(wrapper)
         continue
@@ -619,6 +623,41 @@ function rawBlockElement(raw: string, from: number, reason = '复杂结构') {
   return element
 }
 
+function customBlockElement(block: MarkdownSourceBlock, selectionFrom: number, selectionTo: number) {
+  const token = block.tokens[0]
+  const definition = props.adapter.syntax?.resolve(token?.meta?.syntaxKind)
+  if (!token || definition?.scope !== 'block' || !definition.getBlockParts) return
+  const range = resolveMarkdownSyntaxRange(token, definition, { source, blockFrom: block.from })
+  if (range?.from !== block.from || range.to !== block.to) return
+  try {
+    const parts = definition.getBlockParts(block.text)
+    if (!parts || !Number.isInteger(parts.bodyFrom) || !Number.isInteger(parts.bodyTo) ||
+      parts.bodyFrom < 0 || parts.bodyTo < parts.bodyFrom || parts.bodyTo > block.text.length) return
+    if (parts.tag && !['div', 'section', 'aside', 'blockquote', 'figure', 'pre'].includes(parts.tag)) return
+    const element = document.createElement(parts.tag || 'div')
+    element.className = ['markdown-editor-block', definition.className, definition.editorClassName].filter(Boolean).join(' ')
+    element.dataset.syntaxKind = definition.name
+    element.dataset.sourceFrom = String(block.from)
+    element.dataset.sourceTo = String(block.to)
+    const bodyFrom = block.from + parts.bodyFrom
+    const bodyTo = block.from + parts.bodyTo
+    element.dataset.syntaxBodyFrom = String(bodyFrom)
+    element.dataset.syntaxBodyTo = String(bodyTo)
+    const body = block.text.slice(parts.bodyFrom, parts.bodyTo)
+    const bodyElement = document.createElement(parts.tag === 'pre' ? 'span' : 'div')
+    bodyElement.className = 'markdown-custom-block-body'
+    bodyElement.append(definition.contentMode === 'markdown'
+      ? inlineNodes(body, bodyFrom, selectionFrom, selectionTo) : textNode(body, bodyFrom, bodyTo))
+    const visible = nearSyntax(selectionFrom, selectionTo, block.from, bodyFrom) || nearSyntax(selectionFrom, selectionTo, bodyTo, block.to)
+    if (bodyFrom > block.from) element.append(boundary(block.text.slice(0, parts.bodyFrom), block.from, bodyFrom, visible))
+    element.append(bodyElement)
+    if (bodyTo < block.to) element.append(boundary(block.text.slice(parts.bodyTo), bodyTo, block.to, visible))
+    return element
+  } catch {
+    return undefined
+  }
+}
+
 function footnoteDefinitionElement(raw: string, from: number, activeFrom: number, activeTo: number) {
   const first = raw.match(/^( {0,3}\[\^([^\]\s]+)\]:[ \t]*)([^\r\n]*)/)
   const refs = sourceDocumentFor(source).env.footnotes?.refs
@@ -668,33 +707,39 @@ function sourceDocumentFor(value: string) {
   return document
 }
 
-async function enhanceMermaidBlocks() {
-  if (!root.value || focused.value) return
-  const blocks = [...root.value.querySelectorAll<HTMLElement>('.markdown-editor-mermaid')]
-  if (!blocks.length) return
-  if (!props.renderMermaid) return
-  try {
-    for (const block of blocks) {
-      if (block.querySelector('.markdown-editor-mermaid-preview')) continue
-      const source = block.dataset.mermaidSource || ''
-      const preview = document.createElement('div')
-      preview.className = 'markdown-editor-mermaid-preview'
-      preview.contentEditable = 'false'
-      preview.setAttribute('aria-hidden', 'true')
-      try {
-        const rendered = await props.renderMermaid(source)
-        const svg = typeof rendered === 'string' ? rendered : rendered.svg
-        const image = document.createElement('img')
-        image.alt = 'Mermaid 图表预览'
-        image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
-        preview.append(image)
-      } catch {
-        preview.classList.add('is-error')
-        preview.textContent = 'Mermaid 语法错误，切换源码模式查看。'
-      }
-      block.prepend(preview)
+const pendingMermaid = new WeakSet<HTMLElement>()
+
+async function enhanceMermaidBlocks(only?: HTMLElement) {
+  const editor = root.value
+  const renderer = props.renderMermaid
+  if (!editor || !renderer || (focused.value && !only)) return
+  const blocks = only ? [only] : [...editor.querySelectorAll<HTMLElement>('.markdown-editor-mermaid')]
+  for (const block of blocks) {
+    if (block.querySelector('.markdown-editor-mermaid-preview') || pendingMermaid.has(block)) continue
+    pendingMermaid.add(block)
+    const diagram = block.dataset.mermaidSource || ''
+    const preview = document.createElement('div')
+    preview.className = 'markdown-editor-mermaid-preview'
+    preview.contentEditable = 'false'
+    try {
+      const rendered = await renderer(diagram)
+      const svg = typeof rendered === 'string' ? rendered : rendered.svg
+      const image = document.createElement('img')
+      image.alt = 'Mermaid 图表预览'
+      image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+      preview.append(image)
+    } catch {
+      preview.classList.add('is-error')
+      preview.setAttribute('role', 'status')
+      preview.textContent = 'Mermaid 语法错误，请返回源码修改。'
+    } finally {
+      pendingMermaid.delete(block)
     }
-  } catch { blocks.forEach(block => block.classList.add('mermaid-render-error')) }
+    if (root.value !== editor || !editor.contains(block) || block.dataset.mermaidSource !== diagram) continue
+    const controls = block.querySelector('.markdown-editor-mermaid-controls')
+    if (controls) controls.after(preview)
+    else block.prepend(preview)
+  }
 }
 
 function highlightedText(text: string, from: number, language: string) {
@@ -954,12 +999,33 @@ function createBlockElement(raw: string, from: number, selectionFrom = -1, selec
     const element = document.createElement('div')
     const isMermaid = language.toLowerCase() === 'mermaid'
     element.className = `markdown-editor-block markdown-editor-code bd-code-block${isMermaid ? ' markdown-editor-mermaid' : ''}`
-    if (isMermaid) element.dataset.mermaidSource = lines.slice(1, -1).join('\n')
     const pre = document.createElement('pre')
     pre.className = 'hljs'
     const code = document.createElement('code')
     let offset = 0
     const fence = first.match(/^ {0,3}(`{3,}|~{3,})/)?.[1]
+    if (isMermaid && props.renderMermaid) {
+      const closing = lines.at(-1)?.trim() || ''
+      const closed = !!fence && lines.length > 1 && closing.length >= fence.length &&
+        [...closing].every(char => char === fence[0])
+      element.dataset.mermaidSource = lines.slice(1, closed ? -1 : undefined).join('\n')
+      const controls = document.createElement('div')
+      controls.className = 'markdown-editor-mermaid-controls'
+      controls.contentEditable = 'false'
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.textContent = '预览图表'
+      button.setAttribute('aria-pressed', 'false')
+      button.addEventListener('click', () => {
+        const showing = element.dataset.mermaidMode === 'preview'
+        element.dataset.mermaidMode = showing ? 'source' : 'preview'
+        button.textContent = showing ? '预览图表' : '编辑源码'
+        button.setAttribute('aria-pressed', String(!showing))
+        if (!showing) void enhanceMermaidBlocks(element)
+      })
+      controls.append(button)
+      element.append(controls)
+    }
     for (const [index, line] of lines.entries()) {
       const isFence = !!fence && (index === 0 || index === lines.length - 1 && line.trim().length >= fence.length && [...line.trim()].every(char => char === fence[0]))
       const row = document.createElement('span')
@@ -1215,7 +1281,7 @@ function handleSelectionChange() {
   for (const image of root.value.querySelectorAll<HTMLElement>('.markdown-editor-image')) {
     image.classList.toggle('is-selected', range.from === Number(image.dataset.sourceFrom) && range.to === Number(image.dataset.sourceTo))
   }
-  if (props.editingStyle === 'structure' && selection.isCollapsed) {
+  if (selection.isCollapsed) {
     const node = selection.anchorNode instanceof Element ? selection.anchorNode : selection.anchorNode.parentElement
     const hidden = node?.closest<HTMLElement>('[data-source-hidden="true"]')
     if (hidden) {
@@ -1230,15 +1296,15 @@ function handleSelectionChange() {
   // Revealing delimiters changes line widths. Keep the current presentation
   // while a range is being extended so a native pointer drag has stable targets.
   if (!selection.isCollapsed) return
-  if (props.editingStyle === 'always' || props.editingStyle === 'structure') return
   const key = syntaxContext(range.from, range.to)
   activeSyntaxKey = key
-  const markers = [...root.value.querySelectorAll<HTMLElement>('.markdown-syntax-boundary')]
-  window.clearTimeout(syntaxRevealTimer)
+  if (syntaxRevealTimer !== undefined) return
   syntaxRevealTimer = window.setTimeout(() => {
+    syntaxRevealTimer = undefined
     if (!root.value || !focused.value || composing.value) return
     const current = selectionOffset()
     if (!window.getSelection()?.isCollapsed) return
+    const markers = [...root.value.querySelectorAll<HTMLElement>('.markdown-syntax-boundary')]
     const activeParents = new Set<HTMLElement>()
     for (const marker of markers) {
       const parent = marker.parentElement?.closest<HTMLElement>('[data-source-from][data-source-to]') || marker.parentElement
@@ -1249,10 +1315,12 @@ function handleSelectionChange() {
     }
     for (const marker of markers) {
       const parent = marker.parentElement?.closest<HTMLElement>('[data-source-from][data-source-to]') || marker.parentElement
+      if (props.editingStyle !== 'blur-hidden' || markerSyntaxOwner(marker)) continue
       const visible = !!parent && activeParents.has(parent)
       marker.classList.toggle('is-visible', visible)
       marker.setAttribute('aria-hidden', String(!visible))
     }
+    updateEditingEffects(current, true)
   }, 70)
 }
 
@@ -1265,52 +1333,130 @@ function handleBlur() {
   updateEditingEffects()
   activeSyntaxKey = ''
   window.clearTimeout(syntaxRevealTimer)
+  syntaxRevealTimer = undefined
   if (props.editingStyle !== 'always') for (const marker of root.value?.querySelectorAll<HTMLElement>('.markdown-syntax-boundary') || []) {
+    if (markerSyntaxOwner(marker)) continue
     marker.classList.remove('is-visible')
     marker.setAttribute('aria-hidden', 'true')
   }
   void enhanceMermaidBlocks()
 }
 
-function updateEditingEffects(range?: SelectionState) {
+let hoveredSyntax: HTMLElement | null = null
+let editingRange: SelectionState | undefined
+let lastSyntaxState = ''
+
+function syntaxMarkerContainer(node: HTMLElement) {
+  return node.parentElement?.classList.contains('markdown-inline-syntax') ? node.parentElement : node
+}
+
+function markerSyntaxOwner(marker: HTMLElement) {
+  const container = marker.parentElement
+  if (container?.dataset.syntaxKind) return container
+  if (container?.classList.contains('markdown-inline-syntax')) {
+    return [...container.children].find(child => (child as HTMLElement).dataset.syntaxKind)
+  }
+}
+
+function handleSyntaxHover(event: PointerEvent) {
+  if (event.pointerType === 'touch') return
+  const next = event.type === 'pointerout' ? event.relatedTarget : event.target
+  const node = next instanceof Element && root.value?.contains(next)
+    ? next.closest<HTMLElement>('[data-syntax-kind]') : null
+  if (node === hoveredSyntax) return
+  hoveredSyntax = node
+  updateEditingEffects(editingRange)
+}
+
+function updateEditingEffects(range?: SelectionState, applyDelayedReveal = false) {
   if (!root.value) return
+  editingRange = range
   for (const block of root.value.children) {
     const from = Number((block as HTMLElement).dataset.sourceFrom)
     const to = Number((block as HTMLElement).dataset.sourceTo)
     block.classList.toggle('markdown-editing-active', !!range && range.to >= from && range.from <= to)
   }
-  for (const spoiler of root.value.querySelectorAll<HTMLElement>('.bd-markdown-theme-spoiler')) {
+  for (const spoiler of root.value.querySelectorAll<HTMLElement>('.bd-markdown-theme-spoiler:not([data-syntax-kind])')) {
     const from = Number(spoiler.dataset.sourceFrom)
     const to = Number(spoiler.dataset.sourceTo)
     spoiler.classList.toggle('markdown-editing-revealed', !!range && range.to >= from && range.from <= to)
   }
-    const states: MarkdownSyntaxState[] = []
-    for (const node of root.value.querySelectorAll<HTMLElement>('[data-syntax-kind][data-source-from][data-source-to]')) {
-      const syntaxKind = node.dataset.syntaxKind
-      if (!syntaxKind) continue
-      const from = Number(node.dataset.sourceFrom), to = Number(node.dataset.sourceTo)
-      const parts = props.adapter.syntax?.resolve(syntaxKind)
-      const raw = source.slice(from, to)
-      const parsed = parts?.getInlineParts?.(raw)
-      const bodyFrom = parsed ? from + parsed.open.length : from
-      const bodyTo = parsed ? to - parsed.close.length : to
-      const focused = !!range && range.from >= from && range.to <= to
-      const caretInside = !!range && range.from === range.to && range.from >= bodyFrom && range.from <= bodyTo
-      const boundaryNear = !!range && (Math.abs(range.from - from) <= 1 || Math.abs(range.to - to) <= 1)
-      const selected = !!range && range.from < to && range.to > from
-      const configured = props.syntaxEditing?.[syntaxKind]
-      const definition = parts?.editing
-      const effect = configured?.effect || definition?.effect || 'theme'
-      const reveal = configured?.reveal || definition?.reveal || 'near'
-      const effectPaused = effect === 'pause-inside' ? caretInside : effect === 'pause-active' ? focused : false
-      const boundaryVisible = reveal === 'always' || (reveal === 'inside' && caretInside) || (reveal === 'near' && (focused || boundaryNear))
-      node.classList.toggle('is-caret-inside', caretInside)
-      node.classList.toggle('is-syntax-active', focused)
-      node.classList.toggle('is-effect-paused', effectPaused)
-      node.classList.toggle('is-boundary-visible', boundaryVisible)
-      states.push({ syntaxKind, from, to, bodyFrom, bodyTo, focused, caretInside, boundaryNear, selected, effectPaused, boundaryVisible, reveal, effect })
+  const states: MarkdownSyntaxState[] = []
+  const byNode = new Map<Element, MarkdownSyntaxState>()
+  for (const node of root.value.querySelectorAll<HTMLElement>('[data-syntax-kind][data-source-from][data-source-to]')) {
+    const syntaxKind = node.dataset.syntaxKind!
+    const from = Number(node.dataset.sourceFrom), to = Number(node.dataset.sourceTo)
+    const markers = [...syntaxMarkerContainer(node).children].filter((child): child is HTMLElement =>
+      child instanceof HTMLElement && child.classList.contains('markdown-syntax-boundary'))
+    const opening = markers.find(marker => Number(marker.dataset.sourceFrom) === from)
+    const closing = markers.find(marker => Number(marker.dataset.sourceTo) === to)
+    const bodyFrom = Number(node.dataset.syntaxBodyFrom ?? opening?.dataset.sourceTo ?? from)
+    const bodyTo = Number(node.dataset.syntaxBodyTo ?? closing?.dataset.sourceFrom ?? to)
+    const hovered = !!hoveredSyntax && node.contains(hoveredSyntax)
+    const focused = !!range && range.from >= from && range.to <= to
+    const caretInside = !!range && range.from === range.to && range.from >= bodyFrom && range.from <= bodyTo
+    const boundaryNear = !!range && range.from === range.to && markers.some(marker =>
+      nearSyntax(range.from, range.to, Number(marker.dataset.sourceFrom), Number(marker.dataset.sourceTo)))
+    const overlap = !!range && range.from < to && range.to > from && range.from !== range.to
+    const selection = !overlap ? 'none' : range.from <= from && range.to >= to ? 'contains'
+      : focused ? 'inside' : 'crosses'
+    const configured = props.syntaxEditing?.[syntaxKind]
+    const definition = props.adapter.syntax?.resolve(syntaxKind)?.editing
+    const effect = configured?.effect ?? definition?.effect ?? 'theme'
+    const reveal = configured?.reveal ?? definition?.reveal ?? 'near'
+    const boundaryMode = configured?.boundary ?? definition?.boundary
+    const structural = boundaryMode === 'structure' || props.editingStyle === 'structure'
+    const forced = !structural && boundaryMode !== 'hidden' && reveal !== 'never' &&
+      (boundaryMode === 'visible' || props.editingStyle === 'always' || reveal === 'always')
+    const hidden = structural || boundaryMode === 'hidden' || reveal === 'never'
+    const canChangeReveal = applyDelayedReveal || !range || hidden || forced
+    for (const marker of markers) {
+      if (structural) {
+        marker.dataset.sourceHidden = 'true'
+        marker.contentEditable = 'false'
+      } else if (marker.dataset.sourceHidden) {
+        delete marker.dataset.sourceHidden
+        marker.removeAttribute('contenteditable')
+      }
+      if (!canChangeReveal) continue
+      const visible = forced || (!hidden && (reveal === 'inside' ? caretInside : boundaryNear))
+      marker.classList.toggle('is-visible', visible)
+      marker.setAttribute('aria-hidden', String(!visible))
     }
+    const effectPaused = props.editingEffects !== 'none' &&
+      (effect === 'pause-inside' ? caretInside : effect === 'pause-active' ? caretInside || overlap || hovered
+        : effect === 'pause-hover' ? hovered : false)
+    const boundaryVisible = markers.some(marker => marker.classList.contains('is-visible'))
+    const parentNode = node.parentElement?.closest('[data-syntax-kind]')
+    const parent = parentNode && byNode.get(parentNode)
+    node.classList.toggle('is-caret-inside', caretInside)
+    node.classList.toggle('is-syntax-active', focused)
+    node.classList.toggle('is-effect-paused', effectPaused)
+    node.classList.toggle('is-boundary-visible', boundaryVisible)
+    const id = `${syntaxKind}:${from}:${to}:${states.length}`
+    const state: MarkdownSyntaxState = { id, parentId: parent?.id, depth: parent ? parent.depth + 1 : 0,
+      syntaxKind, from, to, bodyFrom, bodyTo, focused, caretInside, boundaryNear, hovered,
+      selection, selected: overlap, effectPaused, boundaryVisible, reveal, effect }
+    byNode.set(node, state)
+    states.push(state)
+  }
+  const signature = JSON.stringify(states)
+  if (signature !== lastSyntaxState) {
+    lastSyntaxState = signature
     emit('syntax-state-change', states)
+  }
+}
+
+function jumpToFootnote(label: string | undefined) {
+  if (!label || !root.value) return
+  const definition = [...root.value.querySelectorAll<HTMLElement>('.markdown-editor-footnote-definition')]
+    .find(element => element.dataset.footnoteLabel === label)
+  const body = definition?.querySelector<HTMLElement>('.markdown-editor-footnote-body')
+  if (!body) return
+  const marker = body.querySelector<HTMLElement>('.markdown-syntax-boundary')
+  root.value.focus({ preventScroll: true })
+  setSelection(Number(marker?.dataset.sourceTo ?? body.dataset.sourceFrom))
+  definition?.scrollIntoView({ block: 'nearest', behavior: 'auto' })
 }
 
 function handlePointerDown(event: PointerEvent) {
@@ -1346,15 +1492,7 @@ function handlePointerDown(event: PointerEvent) {
   const footnote = target?.closest<HTMLElement>('.markdown-editor-footnote-number')
   if (footnote) {
     event.preventDefault()
-    const label = footnote.parentElement?.dataset.footnoteLabel
-    const definition = [...root.value?.querySelectorAll<HTMLElement>('.markdown-editor-footnote-definition') || []]
-      .find(element => element.dataset.footnoteLabel === label)
-    const body = definition?.querySelector<HTMLElement>('.markdown-editor-footnote-body')
-    if (body) {
-      const marker = body.querySelector<HTMLElement>('.markdown-syntax-boundary')
-      setSelection(Number(marker?.dataset.sourceTo || body.dataset.sourceFrom))
-      definition?.scrollIntoView({ block: 'nearest', behavior: 'auto' })
-    }
+    jumpToFootnote(footnote.parentElement?.dataset.footnoteLabel)
     return
   }
   const image = target?.closest<HTMLElement>('.markdown-editor-image')
@@ -1419,7 +1557,7 @@ function setSelection(from: number, to = from, backward = false) {
 }
 
 function hiddenSyntaxRanges() {
-  if (props.editingStyle !== 'structure' || !root.value) return []
+  if (!root.value) return []
   const ranges = [...root.value.querySelectorAll<HTMLElement>('[data-source-hidden="true"]')].map(node =>
     ({ from: Number(node.dataset.sourceFrom), to: Number(node.dataset.sourceTo), atomic: node.parentElement?.dataset.sourceAtomic === 'true' }))
     .sort((a, b) => a.from - b.from || a.to - b.to)
@@ -1726,7 +1864,9 @@ function render(value: string, from = -1, to = from, backward = false) {
       }
       reusable.dataset.sourceTo = String(end)
     }
-    fragment.append(reusable || (block.raw
+    fragment.append(reusable || (block.tokens[0]?.meta?.syntaxKind && props.adapter.syntax?.resolve(block.tokens[0].meta.syntaxKind)?.scope === 'block'
+      ? customBlockElement(block, from, to) || rawBlockElement(blockText, block.from, '插件源码范围未验证')
+      : block.raw
       ? footnoteDefinitionElement(blockText, block.from, from, to) || rawBlockElement(blockText, block.from, block.fallbackReason)
       : blockElement(blockText, block.from, from, to, block.type)))
     cursor = end
@@ -1789,7 +1929,7 @@ function replace(from: number, to: number, insert: string, selectionBefore: Sele
     desiredSelection ??= { from: from + insert.length, to: from + insert.length, backward: false }
     insert += ' ' // Keep an unpadded table delimiter outside the escape.
   }
-  if (props.editingStyle === 'structure' && !insert && from < to) {
+  if (!insert && from < to && root.value?.querySelector('[data-source-hidden=true]')) {
     const expanded = expandEmptyStructureDeletion(from, to)
     from = expanded.from
     to = expanded.to
@@ -1819,7 +1959,7 @@ function expandEmptyStructureDeletion(from: number, to: number) {
     if (node.matches('.markdown-editor-block, .markdown-editor-code, .markdown-raw-block, .markdown-editor-image')) continue
     const markers = [...node.children].filter((child): child is HTMLElement =>
       child instanceof HTMLElement && child.classList.contains('markdown-syntax-boundary'))
-    if (markers.length !== 2) continue
+    if (markers.length !== 2 || markers.some(marker => marker.dataset.sourceHidden !== 'true')) continue
     pairs.push({ from: Number(markers[0].dataset.sourceFrom), bodyFrom: Number(markers[0].dataset.sourceTo),
       bodyTo: Number(markers[1].dataset.sourceFrom), to: Number(markers[1].dataset.sourceTo) })
   }
@@ -1837,7 +1977,7 @@ function expandEmptyStructureDeletion(from: number, to: number) {
   const lineEnd = newline < 0 ? source.length : newline
   const prefix = source.slice(lineStart, lineEnd).match(/^ {0,3}(?:#{1,6}[ \t]+|(?:>[ \t]?)+|(?:[-+*]|\d+[.)])[ \t]+(?:\[[ xX]\][ \t]+)?)/)?.[0]
   const block = sourceDocumentFor(source).blocks.find(block => from >= block.from && to <= block.to)
-  if (prefix && block && block.type === 'heading_open'
+  if (props.editingStyle === 'structure' && prefix && block && block.type === 'heading_open'
     && from <= lineStart + prefix.length && to >= lineEnd) from = lineStart
   return { from, to }
 }
@@ -2205,10 +2345,10 @@ function handleBeforeInput(event: InputEvent) {
       replace(prefix.from, prefix.to, '', range)
       return
     }
-    if (props.editingStyle === 'structure') {
+    if (props.editingStyle === 'structure' || root.value?.querySelector('[data-source-hidden=true]')) {
       const lineStart = source.lastIndexOf('\n', range.from - 1) + 1
       const marker = source.slice(lineStart, range.from).match(/^[ \t]*(?:(?:>[ \t]?)+|(?:[-+*]|\d+[.)])[ \t]+(?:\[[ xX]\][ \t]*)?)$/)
-      if (marker && block && /^(blockquote_open|bullet_list_open|ordered_list_open)$/.test(block.type || '')) {
+      if (props.editingStyle === 'structure' && marker && block && /^(blockquote_open|bullet_list_open|ordered_list_open)$/.test(block.type || '')) {
         replace(lineStart, range.from, '', range)
         return
       }
@@ -2221,7 +2361,8 @@ function handleBeforeInput(event: InputEvent) {
   }
   if (event.inputType === 'deleteContentForward' && range.from === range.to) {
     event.preventDefault()
-    const deletion = props.editingStyle === 'structure' ? structuralDeletionRange(range.from, 1)
+    const deletion = props.editingStyle === 'structure' || root.value?.querySelector('[data-source-hidden=true]')
+      ? structuralDeletionRange(range.from, 1)
       : { from: range.from, to: adjacentSourceOffset(source, range.from, 1) }
     if (deletion.from < deletion.to) replace(deletion.from, deletion.to, '', range)
     return
@@ -2512,6 +2653,7 @@ function applyExternalValue(value: string) {
 }
 
 watch(() => props.modelValue, applyExternalValue)
+watch([() => props.syntaxEditing, () => props.editingEffects], () => updateEditingEffects(editingRange, true), { deep: true })
 watch([() => props.profile, () => props.adapter], () => {
   if (composing.value) return
   sourceDocumentCache = undefined
@@ -2562,6 +2704,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('scroll', updateTablePosition, true)
   keepTableOpen()
   cancelTableReveal()
+  window.clearTimeout(syntaxRevealTimer)
   mutationObserver?.disconnect()
 })
 defineExpose({ focus: () => root.value?.focus(), sync: () => source, insertSyntax, insertTable, setValue: applyExternalValue })

@@ -69,7 +69,7 @@ const props = withDefaults(defineProps<{
   onLinkClick?: MarkdownLinkHandler
   editingStyle?: MarkdownEditingStyle
   editingEffects?: MarkdownEditingEffects
-  syntaxEditing?: Record<string, { reveal?: 'always' | 'near' | 'inside' | 'never'; effect?: 'theme' | 'pause-inside' | 'pause-active' | 'none' }>
+  syntaxEditing?: Record<string, { reveal?: 'always' | 'near' | 'inside' | 'never'; effect?: 'theme' | 'pause-inside' | 'pause-active' | 'pause-hover' | 'none'; boundary?: 'visible' | 'hidden' | 'structure' }>
 }>(), {
   profile: 'article',
   disabled: false,

@@ -5,28 +5,28 @@ type Segmenter = {
 /** Only continue source prefixes inside a parsed quote, never inside a fence. */
 export function quoteLineBreak(source: string, offset: number, inQuote: boolean) {
   if (!inQuote) return '\n'
-  const start = source.lastIndexOf('\n', Math.max(0, offset - 1)) + 1
+  const start = offset > 0 ? source.lastIndexOf('\n', offset - 1) + 1 : 0
   const line = source.slice(start, offset)
   const prefix = line.match(/^ {0,3}(?:>[ \t]?)+/)?.[0]
   return `\n${prefix || ''}`
 }
 
 export function listLineBreak(source: string, offset: number, ordered?: boolean) {
-  const start = source.lastIndexOf('\n', Math.max(0, offset - 1)) + 1
+  const start = offset > 0 ? source.lastIndexOf('\n', offset - 1) + 1 : 0
   const line = source.slice(start, offset)
   const match = line.match(/^([ \t]*)([-+*]|\d+[.)])([ \t]+)(?:\[([ xX])\][ \t]+)?(.*)$/)
   if (!match) return '\n'
   if (!match[5].trim()) return '\n'
   const indent = match[1]
   const marker = (ordered ?? /^\d/.test(match[2]))
-    ? `${Math.max(1, Number.parseInt(match[2], 10) + 1)}. `
+    ? `${Math.max(1, Number.parseInt(match[2], 10) + 1)}${match[2].slice(-1)} `
     : `${match[2]} `
   const task = match[4] === undefined ? '' : '[ ] '
   return `\n${indent}${marker}${task}`
 }
 
 export function structuralPrefix(source: string, offset: number, kind: 'quote' | 'list') {
-  const start = source.lastIndexOf('\n', Math.max(0, offset - 1)) + 1
+  const start = offset > 0 ? source.lastIndexOf('\n', offset - 1) + 1 : 0
   const line = source.slice(start, offset)
   const pattern = kind === 'quote'
     ? /^([ \t]{0,3}(?:>[ \t]?)+)$/

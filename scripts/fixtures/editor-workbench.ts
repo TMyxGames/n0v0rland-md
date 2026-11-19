@@ -26,6 +26,8 @@ const pendingUploads: ((value: string[]) => void)[] = []
 const linkClicks: string[] = []
 const input = ref<any>()
 const changes: string[] = []
+const syntaxStates = shallowRef<unknown[]>([])
+const syntaxEditing = shallowRef<Record<string, any>>({})
 const validities: boolean[] = []
 const parser = createMarkdownItPreset({ configure(md) { md.use(expressionPlugin) } })
 const rangedSyntax = {
@@ -40,6 +42,24 @@ const rangedSyntax = {
     return raw ? { from, to: from + raw.length } : undefined
   },
 }
+const blockSyntax = { name: 'test-panel', scope: 'block' as const, className: 'workbench-panel',
+  getBlockParts: (raw: string) => ({ bodyFrom: 3, bodyTo: raw.length, tag: 'aside' as const }) }
+const mappedBlocks = createMarkdownItPreset({ configure(md) {
+  md.block.ruler.before('paragraph', 'workbench-panel', (state, start, _end, silent) => {
+    const from = state.bMarks[start] + state.tShift[start]
+    const to = state.eMarks[start]
+    const raw = state.src.slice(from, to)
+    if (!/^!![? ]/.test(raw)) return false
+    if (silent) return true
+    const token = state.push('workbench_panel', 'aside', 0)
+    token.map = [start, start + 1]
+    token.meta = raw.startsWith('!! ')
+      ? { syntaxKind: 'test-panel', sourceFrom: from, sourceTo: to }
+      : { syntaxKind: 'test-panel' }
+    state.line = start + 1
+    return true
+  })
+} })
 const legacy = createSiteMarkdown()
 const adapter = shallowRef(createMarkdownItAdapter({ markdown: parser, syntax: expressionSyntax }))
 const styleElement = document.createElement('style')
@@ -68,12 +88,13 @@ Object.assign(window, {
       if ('disabled' in options) disabled.value = options.disabled
       if ('maxLength' in options) maxLength.value = options.maxLength
       if ('full' in options) full.value = options.full
+      if ('syntaxEditing' in options) syntaxEditing.value = options.syntaxEditing
       if ('errorUpload' in options) errorUpload.value = options.errorUpload
       if ('deferMermaid' in options) deferMermaid.value = options.deferMermaid
       if ('deferUpload' in options) deferUpload.value = options.deferUpload
       if ('duplicateUpload' in options) duplicateUpload.value = options.duplicateUpload
       if ('parser' in options) {
-        const md = options.parser === 'legacy' ? (profile.value === 'comment' ? legacy.commentMd : legacy.md)
+        const md = options.parser === 'mapped-block' ? mappedBlocks : options.parser === 'legacy' ? (profile.value === 'comment' ? legacy.commentMd : legacy.md)
           : options.parser === 'no-emphasis' ? createMarkdownItPreset({ configure(md) { md.disable('emphasis') } })
             : options.parser === 'no-basics' ? createMarkdownItPreset({ configure(md) { md.disable(['emphasis', 'strikethrough', 'heading', 'lheading', 'blockquote', 'fence', 'hr']) } })
             : options.parser === 'presentation' ? createMarkdownItPreset({ configure(md) {
@@ -105,11 +126,11 @@ Object.assign(window, {
               } }) : parser
         adapter.value = options.parser === 'homepage' ? homepageAdapter
           : createMarkdownItAdapter({ markdown: md, profile: profile.value,
-            syntax: options.parser === 'extension-ranges' ? [rangedSyntax] : expressionSyntax })
+            syntax: options.parser === 'extension-ranges' ? [rangedSyntax] : options.parser === 'mapped-block' ? [blockSyntax] : expressionSyntax })
       }
       await settled()
     },
-    state() { return { value: value.value, changes: [...changes], validities: [...validities], linkClicks: [...linkClicks], synced: input.value?.sync(), pendingMermaid: pendingMermaid.length, pendingUploads: pendingUploads.length } },
+    state() { return { syntaxStates: syntaxStates.value, value: value.value, changes: [...changes], validities: [...validities], linkClicks: [...linkClicks], synced: input.value?.sync(), pendingMermaid: pendingMermaid.length, pendingUploads: pendingUploads.length } },
     clearEvents() { changes.length = 0; validities.length = 0 },
     async insert(before: string, after = '') { input.value?.insertSyntax(before, after); await settled() },
     async insertTable(rows = 3, columns = 3) { input.value?.insertTable(rows, columns); await settled() },
@@ -141,7 +162,9 @@ createApp(defineComponent({
         ref: input, modelValue: value.value, mode: mode.value, editingStyle: style.value,
         profile: profile.value, adapter: adapter.value, disabled: disabled.value, maxLength: maxLength.value,
         'onUpdate:modelValue': (next: string) => { changes.push(next); value.value = next },
+        'onSyntaxStateChange': (states: unknown[]) => { syntaxStates.value = states },
         onValidity: (next: boolean) => validities.push(next),
+        syntaxEditing: syntaxEditing.value,
         renderMermaid,
         highlightCode: (text: string) => `<span class="workbench-highlight">${text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')}</span>`,
         onLinkClick: (url: string) => linkClicks.push(url),

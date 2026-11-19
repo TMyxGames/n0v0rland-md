@@ -1,5 +1,5 @@
 import type { MarkdownSyntaxRegistry } from '@n0v0rland-md/core'
-import type { MarkdownSyntaxEffect, MarkdownSyntaxReveal } from '@n0v0rland-md/core'
+import type { MarkdownSyntaxBoundary, MarkdownSyntaxEffect, MarkdownSyntaxReveal } from '@n0v0rland-md/core'
 
 export type MarkdownEditorMode = 'visual' | 'source' | 'preview'
 export type MarkdownEditorProfile = 'article' | 'comment'
@@ -18,6 +18,11 @@ export interface MarkdownInputState {
   overLimit: boolean
 }
 export interface MarkdownSyntaxState {
+  id: string
+  parentId?: string
+  depth: number
+  hovered: boolean
+  selection: 'none' | 'inside' | 'contains' | 'crosses'
   syntaxKind: string
   from: number
   to: number
@@ -60,7 +65,7 @@ export interface MarkdownEditorProps {
   onLinkClick?: MarkdownLinkHandler
   editingStyle?: MarkdownEditingStyle
   editingEffects?: MarkdownEditingEffects
-  syntaxEditing?: Record<string, { reveal?: MarkdownSyntaxReveal; effect?: MarkdownSyntaxEffect }>
+  syntaxEditing?: Record<string, { reveal?: MarkdownSyntaxReveal; effect?: MarkdownSyntaxEffect; boundary?: MarkdownSyntaxBoundary }>
   highlightCode?: MarkdownHighlightCode
   renderMermaid?: MarkdownRenderMermaid
 }

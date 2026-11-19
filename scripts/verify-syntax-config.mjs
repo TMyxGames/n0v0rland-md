@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { createMarkdownSyntaxRegistry } from '../packages/core/dist/index.js'
+import { createMarkdownSyntaxRegistry, resolveMarkdownSyntaxRange, MARKDOWN_SYNTAX_VERSION } from '../packages/core/dist/index.js'
 import { readFileSync } from 'node:fs'
 import ts from 'typescript'
 import { createMarkdownItPreset } from '../packages/preset/dist/index.js'
@@ -24,6 +24,23 @@ assert.equal(registry.resolve('highlight')?.name, 'highlight-box')
 assert.equal(registry.resolve('missing'), undefined)
 assert.deepEqual(registry.toolbar('article').map(item => item.kind), ['highlight-box'])
 assert.deepEqual(registry.toolbar('comment'), [])
+
+const item = { name: '示例', aliases: ['demo'], scope: 'block' }
+const versioned = createMarkdownSyntaxRegistry({ version: MARKDOWN_SYNTAX_VERSION, definitions: [item] })
+assert.equal(versioned.version, 1)
+assert.equal(versioned.resolve('DEMO')?.name, '示例')
+assert.throws(() => createMarkdownSyntaxRegistry({ version: 2, definitions: [] }), /version/)
+assert.throws(() => createMarkdownSyntaxRegistry([item, { name: 'Demo', scope: 'inline' }]), /already registered/)
+assert.throws(() => createMarkdownSyntaxRegistry([{ ...item, editing: { reveal: 'unknown' } }]), /editing.reveal/)
+assert.throws(() => createMarkdownSyntaxRegistry([{ ...item, contentMode: 'invalid' }]), /contentMode/)
+assert.throws(() => createMarkdownSyntaxRegistry([{ ...item, getInlineParts: () => {} }]), /getInlineParts/)
+const context = { source: '中文内容' }
+const definition = { ...item, getSourceRange: () => ({ from: 1, to: 3 }) }
+assert.deepEqual(resolveMarkdownSyntaxRange({}, definition, context), { from: 1, to: 3 })
+assert.equal(resolveMarkdownSyntaxRange({ meta: { sourceFrom: 1 } }, definition, context), undefined)
+assert.equal(resolveMarkdownSyntaxRange({ meta: { sourceFrom: 1, sourceTo: 9 } }, definition, context), undefined)
+assert.equal(resolveMarkdownSyntaxRange({}, { ...definition, editorFallback: 'source' }, context), undefined)
+assert.equal(resolveMarkdownSyntaxRange({}, { ...definition, getSourceRange: () => { throw Error('plugin failure') } }, context), undefined)
 
 // Exercise the real demo configuration independently of the legacy site preset.
 let source = readFileSync(new URL('../examples/vue-vite/src/expression-syntax.ts', import.meta.url), 'utf8')

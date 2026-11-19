@@ -6,9 +6,10 @@ import { chromium } from 'playwright'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 const artifacts = fileURLToPath(new URL('../.artifacts/', import.meta.url))
-const origin = process.env.MDE_INTEGRATION_TEST_URL || 'http://127.0.0.1:5201'
+const port = process.env.MDE_INTEGRATION_TEST_PORT || '5201'
+const origin = process.env.MDE_INTEGRATION_TEST_URL || 'http://127.0.0.1:' + port
 const server = process.env.MDE_INTEGRATION_TEST_URL ? undefined : spawn(process.execPath, [
-  'node_modules/vite/bin/vite.js', '--config', 'examples/vue-vite/vite.config.ts', '--host', '127.0.0.1', '--port', '5201', '--strictPort',
+  'node_modules/vite/bin/vite.js', '--config', 'examples/vue-vite/vite.config.ts', '--host', '127.0.0.1', '--port', port, '--strictPort',
 ], { cwd: root, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true })
 let serverOutput = ''
 server?.stdout.on('data', data => { serverOutput += data })
@@ -25,9 +26,9 @@ try {
   await mkdir(artifacts, { recursive: true })
   browser = await chromium.launch({ headless: true, channel: process.env.MDE_BROWSER_CHANNEL || (process.platform === 'win32' ? 'msedge' : undefined) })
   const fixture = `${origin}/@fs/${root.replaceAll('\\', '/')}scripts/fixtures/editor-workbench.html`
-  async function check(name, fn) {
+  async function check(name, fn, options = {}) {
     if (process.env.MDE_TEST_FILTER && !new RegExp(process.env.MDE_TEST_FILTER, 'i').test(name)) return
-    const page = await browser.newPage({ viewport: { width: 1000, height: 850 } })
+    const page = await browser.newPage({ viewport: { width: 1000, height: 850 }, ...options })
     const errors = []
     page.on('pageerror', error => errors.push(error.message))
     try {
@@ -56,6 +57,101 @@ try {
       selection.setBaseAndExtent(anchor.node, anchor.offset, focus.node, focus.offset)
     }, { module: selectionModule, from, to })
   }
+  await check('Twelve nested syntax states expose parentage and distinguish crossing selection', async ({ page, set, state }) => {
+    const value = '外部 ' + '::inner['.repeat(12) + '中心' + ']'.repeat(12) + ' 尾部'
+    await set({ value })
+    await selectSource(page, value.indexOf('中心') + 1)
+    await page.waitForFunction(() => window.editorWorkbench.state().syntaxStates.filter(node => node.caretInside).length === 12)
+    const nodes = (await state()).syntaxStates
+    assert.equal(nodes[11].depth, 11)
+    assert.equal(nodes[11].parentId, nodes[10].id)
+    await selectSource(page, 0, value.indexOf('中心') + 1)
+    await page.waitForFunction(() => window.editorWorkbench.state().syntaxStates.every(node => node.selection === 'crosses'))
+    assert.equal((await state()).value, value)
+  })
+  await check('Per-syntax focus, hover and delayed delimiters follow the configured policy', async ({ page, set, state }) => {
+    const value = '前缀 ::inner[需停下] ::loud[不暂停] 后缀'
+    await set({ value, syntaxEditing: { inner: { effect: 'pause-hover' }, loud: { effect: 'none', boundary: 'hidden' } } })
+    const inner = page.locator('[data-syntax-kind="inner"]')
+    await inner.hover()
+    await page.waitForFunction(() => window.editorWorkbench.state().syntaxStates.find(node => node.syntaxKind === 'inner').effectPaused)
+    const innerFrom = value.indexOf('::inner')
+    await selectSource(page, innerFrom + '::inner['.length)
+    await page.waitForFunction(() => window.editorWorkbench.state().syntaxStates.find(node => node.syntaxKind === 'inner').boundaryVisible)
+    assert.equal(await inner.locator('..').locator('.markdown-syntax-boundary.is-visible').count(), 2)
+    await page.locator('[data-syntax-kind="loud"]').hover()
+    await page.waitForFunction(() => !window.editorWorkbench.state().syntaxStates.find(node => node.syntaxKind === 'inner').effectPaused)
+    assert.equal((await state()).syntaxStates.find(node => node.syntaxKind === 'loud').boundaryVisible, false)
+    await selectSource(page, value.length)
+    await page.waitForFunction(() => !window.editorWorkbench.state().syntaxStates.find(node => node.syntaxKind === 'inner').boundaryVisible)
+  })
+  await check('A mapped block is editable and a neighboring unmapped plugin block keeps its source', async ({ page, set, state }) => {
+    const value = '普通段落\n\n!! 映射正文\n\n!!?无范围'
+    await set({ value, parser: 'mapped-block' })
+    const visual = page.locator('.markdown-visual-editor')
+    assert.equal(await visual.locator('aside.workbench-panel').count(), 1)
+    assert.equal(await visual.locator('.markdown-raw-block').innerText(), '!!?无范围')
+    await selectSource(page, value.indexOf('映射正文') + 2)
+    await page.keyboard.insertText('新')
+    assert.equal((await state()).value, value.replace('映射正文', '映射新正文'))
+  })
+  await check('Mermaid blocks toggle their source and preview independently', async ({ page, set, state }) => {
+    const value = '```mermaid\ngraph TD; A-->B\n```\n\n```mermaid\ngraph TD; C-->D\n```'
+    await set({ value })
+    const diagrams = page.locator('.markdown-editor-mermaid')
+    await diagrams.first().getByRole('button', { name: '预览图表' }).click()
+    await diagrams.first().getByRole('img', { name: 'Mermaid 图表预览' }).waitFor()
+    assert.equal(await diagrams.first().locator('pre').isVisible(), false)
+    assert.equal(await diagrams.last().locator('pre').isVisible(), true)
+    await diagrams.first().getByRole('button', { name: '编辑源码' }).click()
+    assert.equal(await diagrams.first().locator('pre').isVisible(), true)
+    assert.equal((await state()).value, value)
+  })
+  for (const dark of [false, true]) await check(`Mobile touch selects the intended formatted text (dark: ${dark})`, async ({ page, set, state }) => {
+    const value = '前一行\n\n**触屏文字**\n\n后一行'
+      await set({ value, dark, editingStyle: 'structure' })
+      const text = page.locator('.markdown-visual-editor strong .markdown-editor-text')
+      const point = await text.evaluate(element => {
+        const range = document.createRange()
+        range.setStart(element.firstChild, 1)
+        range.setEnd(element.firstChild, 1)
+        const rect = range.getBoundingClientRect()
+        return { x: rect.x, y: rect.y + rect.height / 2 }
+      })
+      await page.touchscreen.tap(point.x, point.y)
+      await page.keyboard.insertText('新')
+      assert.equal((await state()).value, value.replace('触屏', '触新屏'))
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
+      await page.screenshot({ path: `${artifacts}mobile-touch-${dark ? 'dark' : 'light'}.png` })
+  }, { viewport: { width: 390, height: 800 }, isMobile: true, hasTouch: true })
+  await check('Quote, alert and nested task Enter retain their source prefixes', async ({ page, set, state }) => {
+    for (const [value, continuation] of [
+      ['> > 嵌套引用', '> > '],
+      ['> [!NOTE]\n> 提示正文', '> '],
+      ['1. 上级\n   1) 子项', '   2) '],
+      ['- 上级\n  - [x] 已完成', '  - [ ] '],
+    ]) {
+      await set({ value })
+      await selectSource(page, value.length)
+      await page.keyboard.press('Enter')
+      await page.keyboard.insertText('第二行')
+      assert.equal((await state()).value, `${value}\n${continuation}第二行`)
+      await page.keyboard.press('Enter')
+      assert.equal((await state()).value, `${value}\n${continuation}第二行\n${continuation.replace('2)', '3)')}`)
+    }
+  })
+  await check('Large document input preserves all untouched Markdown', async ({ page, set, state }) => {
+    const value = Array.from({ length: 600 }, (_, index) => `${index} 段落与 **格式**`).join('\n\n')
+    await set({ value })
+    const offset = value.indexOf('300 段落') + 4
+    await selectSource(page, offset)
+    const start = Date.now()
+    await page.keyboard.insertText('新')
+    assert.equal((await state()).value, value.slice(0, offset) + '新' + value.slice(offset))
+    const duration = Date.now() - start
+    console.log(`600 段 Markdown 输入至模型同步 ${duration} ms`)
+    assert.ok(duration < 2500, `Large document input took ${duration} ms`)
+  })
   await check('Opening and mode switching preserve Markdown without editor changes', async ({ page, set, state }) => {
     const cases = ['# 标题\n\n正文 ++下划线++\n\n- 第一项\n\n- 第二项', '**bold** *italic* ~~strike~~ ==mark== `code`', '> 引用\n>\n> 第二段', '| A | B |\n| --- | --- |\n| x | y |', '原文\r\n\r\n**完整**\r\n', '<div>unknown HTML</div>\n\n[^ref]: footnote']
     for (const value of cases) for (const editingStyle of ['always', 'blur-hidden', 'structure']) {

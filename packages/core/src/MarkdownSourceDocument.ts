@@ -18,7 +18,7 @@ export type MarkdownSourceToken = {
   content?: string
   children?: MarkdownSourceToken[]
   attrs?: [string, string][] | null
-  meta?: { label?: string }
+  meta?: { label?: string; syntaxKind?: string; sourceFrom?: number; sourceTo?: number }
 }
 export interface MarkdownBlockParser {
   parse(source: string, env: Record<string, any>): MarkdownSourceToken[]
