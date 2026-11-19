@@ -32,8 +32,15 @@ import h4 from './assets/icons/material-symbols--format-h4-rounded.svg?raw'
 import h5 from './assets/icons/material-symbols--format-h5-rounded.svg?raw'
 import h6 from './assets/icons/material-symbols--format-h6-rounded.svg?raw'
 
+import imageUpload from './assets/icons/material-symbols--image-arrow-up-outline-rounded.svg?raw'
+import mermaid from './assets/icons/material-symbols--flowchart-sharp.svg?raw'
+import alertNote from './assets/icons/material-symbols--info-outline-rounded.svg?raw'
+import alertTip from './assets/icons/material-symbols--lightbulb-2-outline-rounded.svg?raw'
+import alertImportant from './assets/icons/material-symbols--star-outline-rounded.svg?raw'
+import alertWarning from './assets/icons/material-symbols--warning-outline-rounded.svg?raw'
+import alertCaution from './assets/icons/material-symbols--cancel-outline-rounded.svg?raw'
+
 export const markdownIcons: Record<string, string> = {
   bold, italic, underline, strike, code, heading, blockquote, table, codeBlock, link, bulletList, orderedList, spoiler, raw, loud, whisper, inner, alignLeft, alignCenter, alignRight, columnBefore, columnAfter, columnRemove, rowBefore, rowAfter, rowRemove, h1, h2, h3, h4, h5, h6,
-  alert: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2 1 22h22L12 2zm-1 7h2v6h-2V9zm0 8h2v2h-2v-2z"/></svg>',
-  mermaid: '<svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" d="M8 3h8v5H8zM2 16h8v5H2zm12 0h8v5h-8zM12 8v4m-6 4v-4h12v4"/></svg>',
+  alert: alertNote, imageUpload, mermaid, alertNote, alertTip, alertImportant, alertWarning, alertCaution,
 }

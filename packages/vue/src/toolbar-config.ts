@@ -5,6 +5,14 @@ export const defaultToolbars: Record<MarkdownEditorProfile, string[]> = {
   comment: ['bold', 'italic', 'underline', 'strike', 'code', 'link'],
 }
 
+export const alertItems = [
+  { kind: 'alertNote', type: 'note', label: 'Note · 说明' },
+  { kind: 'alertTip', type: 'tip', label: 'Tip · 技巧' },
+  { kind: 'alertImportant', type: 'important', label: 'Important · 重要' },
+  { kind: 'alertWarning', type: 'warning', label: 'Warning · 警告' },
+  { kind: 'alertCaution', type: 'caution', label: 'Caution · 注意' },
+]
+
 export const syntaxPairs: Record<string, [string, string]> = {
   bold: ['**', '**'],
   italic: ['*', '*'],
@@ -22,6 +30,7 @@ export const syntaxPairs: Record<string, [string, string]> = {
   link: ['[', '](https://example.com)'],
   blockquote: ['> ', ''],
   alert: ['> [!note]\n> ', ''],
+  ...Object.fromEntries(alertItems.map(({ kind, type }) => [kind, [`> [!${type}]\n> `, ''] as [string, string]])),
   table: ['| 列 1 | 列 2 |\n| --- | --- |\n| ', ' |  |'],
   codeBlock: ['```\n', '\n```'],
   mermaid: ['```mermaid\n', '\n```'],

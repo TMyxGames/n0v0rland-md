@@ -21,7 +21,8 @@
         @mousedown.prevent
         @click="fileInput?.click()"
       >
-        {{ uploading ? '上传中…' : '图片' }}
+        <MarkdownIcon name="imageUpload" />
+        <span v-if="uploading" role="status">上传中…</span>
       </button>
     </div>
     <p v-if="uploadError" class="mde__upload-error" role="alert">{{ uploadError }}</p>
@@ -32,12 +33,13 @@
         type="button"
         :title="labels[tool] || tool"
         :aria-label="labels[tool] || tool"
-        :aria-expanded="tool === 'table' ? tablePickerOpen : tool === 'heading' ? headingMenuOpen : undefined"
-        :aria-haspopup="tool === 'table' ? 'dialog' : tool === 'heading' ? 'menu' : undefined"
+        :aria-expanded="tool === 'table' ? tablePickerOpen : isMenu(tool) ? openMenu === tool : undefined"
+        :aria-haspopup="tool === 'table' ? 'dialog' : isMenu(tool) ? 'menu' : undefined"
+        :data-menu-trigger="isMenu(tool) ? tool : undefined"
         :disabled="disabled"
         @mousedown.prevent
         @click="activateTool(tool)"
-        @keydown.down.prevent="tool === 'heading' && openHeadings()"
+        @keydown.down="isMenu(tool) && ($event.preventDefault(), showMenu(tool))"
       >
         <slot name="tool" :tool="tool" :label="labels[tool] || tool">
           <MarkdownIcon v-if="markdownIcons[tool]" :name="tool" />
@@ -46,9 +48,9 @@
       </button>
     </div>
     <Transition name="markdown-table-popover">
-      <div v-if="headingMenuOpen && mode === 'visual' && !disabled" class="mde__heading-menu" :style="headingMenuStyle" role="menu" aria-label="标题级别" @keydown="navigateHeadings">
-        <button v-for="level in 6" :key="level" type="button" role="menuitem" :aria-label="`H${level} 标题`" @mousedown.prevent @click="chooseHeading(level)">
-          <MarkdownIcon :name="`h${level}`" /><span>{{ level }} 级标题</span>
+      <div v-if="openMenu && mode === 'visual' && !disabled" class="mde__heading-menu" :style="menuStyle" role="menu" :aria-label="openMenu === 'heading' ? '标题级别' : '提示块类型'" @keydown="navigateMenu">
+        <button v-for="item in menuItems" :key="item.kind" type="button" role="menuitem" :aria-label="item.label" @mousedown.prevent @click="chooseMenuItem(item.kind)">
+          <MarkdownIcon :name="item.kind" /><span>{{ item.label }}</span>
         </button>
       </div>
     </Transition>
@@ -64,7 +66,7 @@ import MarkdownTablePicker from './MarkdownTablePicker.vue'
 import MarkdownIcon from './MarkdownIcon.vue'
 import { markdownIcons } from './icons'
 import type { MarkdownEditorMode, MarkdownUploadImages } from './types'
-import { toolLabels } from './toolbar-config'
+import { alertItems, toolLabels } from './toolbar-config'
 
 const props = withDefaults(defineProps<{
   mode: MarkdownEditorMode
@@ -86,18 +88,22 @@ const emit = defineEmits<{
 
 const toolbarRoot = ref<HTMLElement>()
 const tablePickerOpen = ref(false)
-const headingMenuOpen = ref(false)
-const headingMenuStyle = ref<Record<string, string>>({})
+type Menu = 'heading' | 'alert'
+const openMenu = ref<Menu>()
+const menuStyle = ref<Record<string, string>>({})
+const menuItems = computed(() => openMenu.value === 'alert' ? alertItems :
+  Array.from({ length: 6 }, (_, index) => ({ kind: `h${index + 1}`, label: `H${index + 1} 标题` })))
+const isMenu = (tool: string): tool is Menu => tool === 'heading' || tool === 'alert'
+const menuTrigger = (menu: Menu) => toolbarRoot.value?.querySelector<HTMLButtonElement>(`[data-menu-trigger="${menu}"]`)
 function closeMenus(restoreFocus = false) {
-  if (restoreFocus && headingMenuOpen.value) toolbarRoot.value?.querySelector<HTMLButtonElement>('[aria-haspopup="menu"]')?.focus()
+  if (restoreFocus && openMenu.value) menuTrigger(openMenu.value)?.focus()
   tablePickerOpen.value = false
-  headingMenuOpen.value = false
+  openMenu.value = undefined
 }
 function activateTool(tool: string) {
-  if (tool === 'heading') {
-    const open = !headingMenuOpen.value
-    closeMenus()
-    if (open) openHeadings()
+  if (isMenu(tool)) {
+    if (openMenu.value === tool) closeMenus()
+    else showMenu(tool)
   } else if (tool === 'table') {
     const open = !tablePickerOpen.value
     closeMenus()
@@ -107,32 +113,34 @@ function activateTool(tool: string) {
     emit('insert-syntax', tool)
   }
 }
-function openHeadings() {
+function showMenu(kind: Menu) {
   if (props.disabled) return
   tablePickerOpen.value = false
-  headingMenuOpen.value = true
+  openMenu.value = kind
   void nextTick(() => {
+    if (openMenu.value !== kind) return
     const host = toolbarRoot.value?.getBoundingClientRect()
-    const trigger = toolbarRoot.value?.querySelector('[aria-haspopup="menu"]')?.getBoundingClientRect()
+    const trigger = menuTrigger(kind)?.getBoundingClientRect()
     const menu = toolbarRoot.value?.querySelector<HTMLElement>('.mde__heading-menu')
     if (host && trigger && menu) {
       const left = Math.max(8, Math.min(trigger.left, window.innerWidth - menu.offsetWidth - 8))
-      headingMenuStyle.value = { left: `${left - host.left}px` }
+      menuStyle.value = { left: `${left - host.left}px` }
+      menu.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus({ preventScroll: true })
     }
-    toolbarRoot.value?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus({ preventScroll: true })
   })
 }
-function chooseHeading(level: number) {
+function chooseMenuItem(kind: string) {
   closeMenus()
-  emit('insert-syntax', `h${level}`)
+  emit('insert-syntax', kind)
 }
-function navigateHeadings(event: KeyboardEvent) {
+function navigateMenu(event: KeyboardEvent) {
   if (!['ArrowDown', 'ArrowUp', 'Home', 'End', 'Tab'].includes(event.key)) return
-  if (event.key === 'Tab') { closeMenus(); return }
+  if (event.key === 'Tab') { closeMenus(true); return }
   event.preventDefault()
-  const items = [...toolbarRoot.value!.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')]
+  const items = [...(event.currentTarget as HTMLElement).querySelectorAll<HTMLButtonElement>('[role="menuitem"]')]
   const index = items.indexOf(event.target as HTMLButtonElement)
-  const next = event.key === 'Home' ? 0 : event.key === 'End' ? 5 : (index + (event.key === 'ArrowUp' ? 5 : 1)) % 6
+  const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1
+    : (index + items.length + (event.key === 'ArrowUp' ? -1 : 1)) % items.length
   items[next]?.focus()
 }
 function insertTable(rows: number, columns: number) {

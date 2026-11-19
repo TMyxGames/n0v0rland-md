@@ -2470,6 +2470,20 @@ function insertSyntax(before: string, after: string) {
     replace(start, start + prefix.length, before, range)
     return
   }
+  const alert = /^> \[!(?:note|tip|important|warning|caution)\]\n> $/i.test(before)
+  const fence = /^```(?:mermaid)?\n$/.test(before) && after === '\n```'
+  if (alert || fence) {
+    const left = source.slice(0, range.from)
+    const right = source.slice(range.to)
+    const leading = left && !left.endsWith('\n\n') ? (left.endsWith('\n') ? '\n' : '\n\n') : ''
+    const trailing = right && !right.startsWith('\n\n') ? (right.startsWith('\n') ? '\n' : '\n\n') : ''
+    const selected = source.slice(range.from, range.to)
+    const content = alert ? selected.replace(/\n/g, '\n> ') : selected
+    const from = range.from + leading.length + before.length
+    replace(range.from, range.to, leading + before + content + after + trailing, range,
+      { from, to: from + content.length, backward: range.backward })
+    return
+  }
   if (before === '[' && after.startsWith('](') && range.from === range.to) {
     const label = '链接文字'
     replace(range.from, range.to, before + label + after, range,
