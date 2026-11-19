@@ -4,14 +4,14 @@
       <MarkdownToolbar
         :mode="mode"
         :tools="visibleToolbar"
-        :upload-images="uploadImages"
+        :upload-images="mode === 'preview' ? undefined : uploadImages"
         :show-source="showSource"
         :show-preview="showPreview"
         :labels="toolbarLabels"
         :disabled="disabled"
         @set-mode="setMode"
         @insert-syntax="insertSyntax"
-        @insert-image="insertImage"
+        @insert-images="insertImages"
         @insert-table="insertTable"
       />
     </slot>
@@ -129,8 +129,15 @@ function insertSyntax(kind: string) {
   input.value?.insertSyntax(before, after)
 }
 
-function insertImage(url: string) {
-  input.value?.insertSyntax(`![图片](${url})`, '')
+function insertImages(urls: string[]) {
+  const images = urls.map(url => {
+    const destination = url.replace(/[\s()<>"\\]/g, char =>
+      `%${char.charCodeAt(0).toString(16).padStart(2, '0')}`)
+    const markdown = props.adapter.markdown
+    if (markdown.validateLink && !markdown.validateLink(markdown.normalizeLink?.(destination) ?? destination)) return ''
+    return `![图片](${destination})`
+  }).filter(Boolean)
+  if (images.length && mode.value !== 'preview') input.value?.insertSyntax(images.join('\n\n') + '\n\n', '')
 }
 function insertTable(rows = 3, columns = 3) {
   input.value?.insertTable(rows, columns)

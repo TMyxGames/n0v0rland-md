@@ -80,6 +80,7 @@ const emit = defineEmits<{
   'set-mode': [mode: MarkdownEditorMode]
   'insert-syntax': [kind: string]
   'insert-image': [url: string]
+  'insert-images': [urls: string[]]
   'insert-table': [rows: number, columns: number]
 }>()
 
@@ -173,7 +174,10 @@ async function handleFiles(event: Event) {
   try {
     const urls = await props.uploadImages(files)
     if (version !== uploadVersion || props.disabled) return
-    for (const url of new Set(urls.filter(Boolean))) emit('insert-image', url)
+    const unique = [...new Set(urls.map(url => url.trim()).filter(Boolean))]
+    if (!unique.length) throw new Error('No uploaded images')
+    emit('insert-images', unique)
+    for (const url of unique) emit('insert-image', url)
   } catch {
     if (version === uploadVersion && !props.disabled) uploadError.value = '图片上传失败，请重试。'
   } finally {
